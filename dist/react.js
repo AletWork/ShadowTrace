@@ -877,11 +877,12 @@ class LocalStorageTransport {
 
 class AutoTracker {
     constructor(config, onEvent) {
+        var _a, _b;
         this.listeners = [];
         this.isActive = false;
-        this.config = Object.assign({ clicks: true, inputs: true, scrolls: false, navigation: true, errors: true, performance: false, selectors: {
-                ignore: ['[data-shadow-ignore]', '.shadow-ignore'],
-                track: []
+        this.config = Object.assign({ clicks: true, inputs: true, scrolls: false, navigation: true, errors: true, performance: false, webVitals: true, slowPages: true, memoryUsage: false, consoleErrors: true, unhandledPromises: true, resourceErrors: true, selectors: {
+                ignore: ((_a = config.selectors) === null || _a === void 0 ? void 0 : _a.ignore) || ['[data-shadow-ignore]', '.shadow-ignore'],
+                track: ((_b = config.selectors) === null || _b === void 0 ? void 0 : _b.track) || []
             } }, config);
         this.onEvent = onEvent;
     }
@@ -890,6 +891,7 @@ class AutoTracker {
             return;
         }
         this.isActive = true;
+        // Tracking existant
         if (this.config.clicks) {
             this.trackClicks();
         }
@@ -902,8 +904,31 @@ class AutoTracker {
         if (this.config.navigation) {
             this.trackNavigation();
         }
+        if (this.config.errors) {
+            this.trackErrors();
+        }
         if (this.config.performance) {
             this.trackPerformance();
+            if (this.config.webVitals !== false) {
+                this.trackWebVitals();
+            }
+            if (this.config.slowPages !== false) {
+                this.trackSlowPages();
+            }
+            if (this.config.resourceErrors !== false) {
+                this.trackResourceErrors();
+            }
+        }
+        // Nouveaux trackings
+        if (this.config.consoleErrors !== false) {
+            this.trackConsoleErrors();
+        }
+        if (this.config.unhandledPromises !== false) {
+            this.trackUnhandledPromises();
+        }
+        this.trackPageVisibility();
+        if (this.config.memoryUsage) {
+            this.trackMemoryUsage();
         }
     }
     stop() {
@@ -1018,6 +1043,28 @@ class AutoTracker {
             window.removeEventListener('popstate', handlePopState);
         });
     }
+    trackErrors() {
+        // Erreurs JavaScript globales
+        const handleError = (event) => {
+            var _a;
+            this.onEvent({
+                type: 'error',
+                data: {
+                    type: 'javascript_error',
+                    message: event.message,
+                    filename: event.filename,
+                    lineno: event.lineno,
+                    colno: event.colno,
+                    error: (_a = event.error) === null || _a === void 0 ? void 0 : _a.stack,
+                    timestamp: Date.now()
+                }
+            });
+        };
+        window.addEventListener('error', handleError);
+        this.listeners.push(() => {
+            window.removeEventListener('error', handleError);
+        });
+    }
     trackPerformance() {
         if (typeof performance !== 'undefined' && performance.getEntriesByType) {
             // Page Load Performance
@@ -1040,6 +1087,247 @@ class AutoTracker {
                 }, 0);
             });
         }
+    }
+    trackConsoleErrors() {
+        // Capture des console.error
+        const originalError = console.error;
+        console.error = (...args) => {
+            this.onEvent({
+                type: 'error',
+                data: {
+                    type: 'console_error',
+                    message: args.map(arg => String(arg)).join(' '),
+                    args: args.slice(0, 5), // Limite pour éviter des données trop lourdes
+                    timestamp: Date.now()
+                }
+            });
+            originalError.apply(console, args);
+        };
+        // Capture des console.warn
+        const originalWarn = console.warn;
+        console.warn = (...args) => {
+            this.onEvent({
+                type: 'error',
+                data: {
+                    type: 'console_warning',
+                    message: args.map(arg => String(arg)).join(' '),
+                    args: args.slice(0, 5),
+                    timestamp: Date.now()
+                }
+            });
+            originalWarn.apply(console, args);
+        };
+        this.listeners.push(() => {
+            console.error = originalError;
+            console.warn = originalWarn;
+        });
+    }
+    trackUnhandledPromises() {
+        const handleRejection = (event) => {
+            this.onEvent({
+                type: 'error',
+                data: {
+                    type: 'unhandled_promise_rejection',
+                    reason: String(event.reason),
+                    promise: event.promise,
+                    timestamp: Date.now()
+                }
+            });
+        };
+        window.addEventListener('unhandledrejection', handleRejection);
+        this.listeners.push(() => {
+            window.removeEventListener('unhandledrejection', handleRejection);
+        });
+    }
+    trackWebVitals() {
+        // Mesure des Core Web Vitals
+        if ('PerformanceObserver' in window) {
+            try {
+                // Largest Contentful Paint (LCP)
+                const lcpObserver = new PerformanceObserver((list) => {
+                    const entries = list.getEntries();
+                    const lastEntry = entries[entries.length - 1];
+                    this.onEvent({
+                        type: 'custom',
+                        data: {
+                            type: 'web_vital',
+                            metric: 'LCP',
+                            value: Math.round(lastEntry.renderTime || lastEntry.loadTime),
+                            rating: this.getWebVitalRating(lastEntry.renderTime || lastEntry.loadTime, 'LCP'),
+                            timestamp: Date.now()
+                        }
+                    });
+                });
+                lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+                // First Input Delay (FID)
+                const fidObserver = new PerformanceObserver((list) => {
+                    const entries = list.getEntries();
+                    entries.forEach((entry) => {
+                        this.onEvent({
+                            type: 'custom',
+                            data: {
+                                type: 'web_vital',
+                                metric: 'FID',
+                                value: Math.round(entry.processingStart - entry.startTime),
+                                rating: this.getWebVitalRating(entry.processingStart - entry.startTime, 'FID'),
+                                timestamp: Date.now()
+                            }
+                        });
+                    });
+                });
+                fidObserver.observe({ entryTypes: ['first-input'] });
+                // Cumulative Layout Shift (CLS)
+                let clsValue = 0;
+                const clsObserver = new PerformanceObserver((list) => {
+                    const entries = list.getEntries();
+                    entries.forEach((entry) => {
+                        if (!entry.hadRecentInput) {
+                            clsValue += entry.value;
+                        }
+                    });
+                    this.onEvent({
+                        type: 'custom',
+                        data: {
+                            type: 'web_vital',
+                            metric: 'CLS',
+                            value: Math.round(clsValue * 1000) / 1000,
+                            rating: this.getWebVitalRating(clsValue, 'CLS'),
+                            timestamp: Date.now()
+                        }
+                    });
+                });
+                clsObserver.observe({ entryTypes: ['layout-shift'] });
+                this.listeners.push(() => {
+                    lcpObserver.disconnect();
+                    fidObserver.disconnect();
+                    clsObserver.disconnect();
+                });
+            }
+            catch (e) {
+                console.warn('Performance Observer not supported for Web Vitals');
+            }
+        }
+    }
+    trackSlowPages() {
+        // Détection des pages lentes
+        const startTime = performance.now();
+        window.addEventListener('load', () => {
+            const loadTime = performance.now() - startTime;
+            if (loadTime > 3000) { // Seuil de 3 secondes
+                this.onEvent({
+                    type: 'custom',
+                    data: {
+                        type: 'slow_page',
+                        loadTime: Math.round(loadTime),
+                        url: window.location.href,
+                        timestamp: Date.now(),
+                        resources: this.getSlowResources()
+                    }
+                });
+            }
+        });
+        // Détection des interactions lentes
+        if ('PerformanceObserver' in window) {
+            try {
+                const observer = new PerformanceObserver((list) => {
+                    const entries = list.getEntries();
+                    entries.forEach((entry) => {
+                        if (entry.duration > 100) { // Seuil de 100ms
+                            this.onEvent({
+                                type: 'custom',
+                                data: {
+                                    type: 'slow_interaction',
+                                    duration: Math.round(entry.duration),
+                                    interactionType: entry.name,
+                                    timestamp: Date.now()
+                                }
+                            });
+                        }
+                    });
+                });
+                observer.observe({ entryTypes: ['measure', 'navigation'] });
+                this.listeners.push(() => observer.disconnect());
+            }
+            catch (e) {
+                console.warn('Performance Observer not supported for slow interactions');
+            }
+        }
+    }
+    trackPageVisibility() {
+        let visibilityStart = Date.now();
+        const handleVisibilityChange = () => {
+            const now = Date.now();
+            const timeSpent = now - visibilityStart;
+            this.onEvent({
+                type: 'custom',
+                data: {
+                    type: 'page_visibility',
+                    visible: !document.hidden,
+                    timeSpent: Math.round(timeSpent),
+                    timestamp: now
+                }
+            });
+            visibilityStart = now;
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        this.listeners.push(() => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        });
+    }
+    trackMemoryUsage() {
+        // Suivi de l'utilisation mémoire (si disponible)
+        if (typeof performance !== 'undefined' && performance.memory) {
+            const checkMemory = () => {
+                const memory = performance.memory;
+                const { jsHeapSizeLimit, totalJSHeapSize, usedJSHeapSize } = memory;
+                const usagePercent = (usedJSHeapSize / jsHeapSizeLimit) * 100;
+                if (usagePercent > 80) { // Seuil de 80%
+                    this.onEvent({
+                        type: 'custom',
+                        data: {
+                            type: 'high_memory_usage',
+                            usedJSHeapSize: Math.round(usedJSHeapSize / 1024 / 1024), // MB
+                            totalJSHeapSize: Math.round(totalJSHeapSize / 1024 / 1024),
+                            jsHeapSizeLimit: Math.round(jsHeapSizeLimit / 1024 / 1024),
+                            usagePercent: Math.round(usagePercent),
+                            timestamp: Date.now()
+                        }
+                    });
+                }
+            };
+            // Vérifier toutes les 30 secondes
+            const interval = setInterval(checkMemory, 30000);
+            this.listeners.push(() => clearInterval(interval));
+        }
+    }
+    getWebVitalRating(value, metric) {
+        const thresholds = {
+            'LCP': { good: 2500, poor: 4000 },
+            'FID': { good: 100, poor: 300 },
+            'CLS': { good: 0.1, poor: 0.25 }
+        };
+        const threshold = thresholds[metric];
+        if (!threshold)
+            return 'good';
+        if (value <= threshold.good)
+            return 'good';
+        if (value <= threshold.poor)
+            return 'needs-improvement';
+        return 'poor';
+    }
+    getSlowResources() {
+        if (!performance.getEntriesByType)
+            return [];
+        const resources = performance.getEntriesByType('resource');
+        return resources
+            .filter(resource => resource.duration > 1000) // Plus de 1 seconde
+            .slice(0, 10) // Top 10 des ressources lentes
+            .map(resource => ({
+            name: resource.name,
+            duration: Math.round(resource.duration),
+            size: resource.transferSize || 0,
+            type: resource.initiatorType
+        }));
     }
     onNavigationEvent(type, url) {
         const eventData = {
@@ -1111,6 +1399,28 @@ class AutoTracker {
         const entries = performance.getEntriesByType('paint');
         const firstContentfulPaint = entries.find(entry => entry.name === 'first-contentful-paint');
         return firstContentfulPaint ? firstContentfulPaint.startTime : null;
+    }
+    trackResourceErrors() {
+        // Erreurs de chargement de ressources
+        const handleResourceError = (event) => {
+            const target = event.target;
+            if (target && (target.tagName === 'IMG' || target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
+                this.onEvent({
+                    type: 'error',
+                    data: {
+                        type: 'resource_error',
+                        element: target.tagName,
+                        source: target.src || target.href,
+                        timestamp: Date.now()
+                    }
+                });
+            }
+        };
+        // Utiliser capture phase pour attraper les erreurs de ressources
+        window.addEventListener('error', handleResourceError, true);
+        this.listeners.push(() => {
+            window.removeEventListener('error', handleResourceError, true);
+        });
     }
 }
 

@@ -4,6 +4,8 @@ export declare class AutoTracker {
     private onEvent;
     private listeners;
     private isActive;
+    private performanceObserver?;
+    private mutationObserver?;
     constructor(config: AutoTrackConfig, onEvent: (event: AutoTrackEvent) => void);
     start(): void;
     stop(): void;
@@ -11,7 +13,16 @@ export declare class AutoTracker {
     private trackInputs;
     private trackScrolls;
     private trackNavigation;
+    private trackErrors;
     private trackPerformance;
+    private trackConsoleErrors;
+    private trackUnhandledPromises;
+    private trackWebVitals;
+    private trackSlowPages;
+    private trackPageVisibility;
+    private trackMemoryUsage;
+    private getWebVitalRating;
+    private getSlowResources;
     private onNavigationEvent;
     private shouldIgnoreElement;
     private getElementText;
@@ -19,4 +30,5 @@ export declare class AutoTracker {
     private sanitizeInputValue;
     private getFirstPaint;
     private getFirstContentfulPaint;
+    private trackResourceErrors;
 }
