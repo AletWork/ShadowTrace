@@ -1,0 +1,1409 @@
+'use strict';
+
+var React = require('react');
+
+var jsxRuntime = {exports: {}};
+
+var reactJsxRuntime_production = {};
+
+/**
+ * @license React
+ * react-jsx-runtime.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+var hasRequiredReactJsxRuntime_production;
+
+function requireReactJsxRuntime_production () {
+	if (hasRequiredReactJsxRuntime_production) return reactJsxRuntime_production;
+	hasRequiredReactJsxRuntime_production = 1;
+	var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"),
+	  REACT_FRAGMENT_TYPE = Symbol.for("react.fragment");
+	function jsxProd(type, config, maybeKey) {
+	  var key = null;
+	  void 0 !== maybeKey && (key = "" + maybeKey);
+	  void 0 !== config.key && (key = "" + config.key);
+	  if ("key" in config) {
+	    maybeKey = {};
+	    for (var propName in config)
+	      "key" !== propName && (maybeKey[propName] = config[propName]);
+	  } else maybeKey = config;
+	  config = maybeKey.ref;
+	  return {
+	    $$typeof: REACT_ELEMENT_TYPE,
+	    type: type,
+	    key: key,
+	    ref: void 0 !== config ? config : null,
+	    props: maybeKey
+	  };
+	}
+	reactJsxRuntime_production.Fragment = REACT_FRAGMENT_TYPE;
+	reactJsxRuntime_production.jsx = jsxProd;
+	reactJsxRuntime_production.jsxs = jsxProd;
+	return reactJsxRuntime_production;
+}
+
+var reactJsxRuntime_development = {};
+
+/**
+ * @license React
+ * react-jsx-runtime.development.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+var hasRequiredReactJsxRuntime_development;
+
+function requireReactJsxRuntime_development () {
+	if (hasRequiredReactJsxRuntime_development) return reactJsxRuntime_development;
+	hasRequiredReactJsxRuntime_development = 1;
+	"production" !== process.env.NODE_ENV &&
+	  (function () {
+	    function getComponentNameFromType(type) {
+	      if (null == type) return null;
+	      if ("function" === typeof type)
+	        return type.$$typeof === REACT_CLIENT_REFERENCE
+	          ? null
+	          : type.displayName || type.name || null;
+	      if ("string" === typeof type) return type;
+	      switch (type) {
+	        case REACT_FRAGMENT_TYPE:
+	          return "Fragment";
+	        case REACT_PROFILER_TYPE:
+	          return "Profiler";
+	        case REACT_STRICT_MODE_TYPE:
+	          return "StrictMode";
+	        case REACT_SUSPENSE_TYPE:
+	          return "Suspense";
+	        case REACT_SUSPENSE_LIST_TYPE:
+	          return "SuspenseList";
+	        case REACT_ACTIVITY_TYPE:
+	          return "Activity";
+	      }
+	      if ("object" === typeof type)
+	        switch (
+	          ("number" === typeof type.tag &&
+	            console.error(
+	              "Received an unexpected object in getComponentNameFromType(). This is likely a bug in React. Please file an issue."
+	            ),
+	          type.$$typeof)
+	        ) {
+	          case REACT_PORTAL_TYPE:
+	            return "Portal";
+	          case REACT_CONTEXT_TYPE:
+	            return (type.displayName || "Context") + ".Provider";
+	          case REACT_CONSUMER_TYPE:
+	            return (type._context.displayName || "Context") + ".Consumer";
+	          case REACT_FORWARD_REF_TYPE:
+	            var innerType = type.render;
+	            type = type.displayName;
+	            type ||
+	              ((type = innerType.displayName || innerType.name || ""),
+	              (type = "" !== type ? "ForwardRef(" + type + ")" : "ForwardRef"));
+	            return type;
+	          case REACT_MEMO_TYPE:
+	            return (
+	              (innerType = type.displayName || null),
+	              null !== innerType
+	                ? innerType
+	                : getComponentNameFromType(type.type) || "Memo"
+	            );
+	          case REACT_LAZY_TYPE:
+	            innerType = type._payload;
+	            type = type._init;
+	            try {
+	              return getComponentNameFromType(type(innerType));
+	            } catch (x) {}
+	        }
+	      return null;
+	    }
+	    function testStringCoercion(value) {
+	      return "" + value;
+	    }
+	    function checkKeyStringCoercion(value) {
+	      try {
+	        testStringCoercion(value);
+	        var JSCompiler_inline_result = !1;
+	      } catch (e) {
+	        JSCompiler_inline_result = true;
+	      }
+	      if (JSCompiler_inline_result) {
+	        JSCompiler_inline_result = console;
+	        var JSCompiler_temp_const = JSCompiler_inline_result.error;
+	        var JSCompiler_inline_result$jscomp$0 =
+	          ("function" === typeof Symbol &&
+	            Symbol.toStringTag &&
+	            value[Symbol.toStringTag]) ||
+	          value.constructor.name ||
+	          "Object";
+	        JSCompiler_temp_const.call(
+	          JSCompiler_inline_result,
+	          "The provided key is an unsupported type %s. This value must be coerced to a string before using it here.",
+	          JSCompiler_inline_result$jscomp$0
+	        );
+	        return testStringCoercion(value);
+	      }
+	    }
+	    function getTaskName(type) {
+	      if (type === REACT_FRAGMENT_TYPE) return "<>";
+	      if (
+	        "object" === typeof type &&
+	        null !== type &&
+	        type.$$typeof === REACT_LAZY_TYPE
+	      )
+	        return "<...>";
+	      try {
+	        var name = getComponentNameFromType(type);
+	        return name ? "<" + name + ">" : "<...>";
+	      } catch (x) {
+	        return "<...>";
+	      }
+	    }
+	    function getOwner() {
+	      var dispatcher = ReactSharedInternals.A;
+	      return null === dispatcher ? null : dispatcher.getOwner();
+	    }
+	    function UnknownOwner() {
+	      return Error("react-stack-top-frame");
+	    }
+	    function hasValidKey(config) {
+	      if (hasOwnProperty.call(config, "key")) {
+	        var getter = Object.getOwnPropertyDescriptor(config, "key").get;
+	        if (getter && getter.isReactWarning) return false;
+	      }
+	      return void 0 !== config.key;
+	    }
+	    function defineKeyPropWarningGetter(props, displayName) {
+	      function warnAboutAccessingKey() {
+	        specialPropKeyWarningShown ||
+	          ((specialPropKeyWarningShown = true),
+	          console.error(
+	            "%s: `key` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop. (https://react.dev/link/special-props)",
+	            displayName
+	          ));
+	      }
+	      warnAboutAccessingKey.isReactWarning = true;
+	      Object.defineProperty(props, "key", {
+	        get: warnAboutAccessingKey,
+	        configurable: true
+	      });
+	    }
+	    function elementRefGetterWithDeprecationWarning() {
+	      var componentName = getComponentNameFromType(this.type);
+	      didWarnAboutElementRef[componentName] ||
+	        ((didWarnAboutElementRef[componentName] = true),
+	        console.error(
+	          "Accessing element.ref was removed in React 19. ref is now a regular prop. It will be removed from the JSX Element type in a future release."
+	        ));
+	      componentName = this.props.ref;
+	      return void 0 !== componentName ? componentName : null;
+	    }
+	    function ReactElement(
+	      type,
+	      key,
+	      self,
+	      source,
+	      owner,
+	      props,
+	      debugStack,
+	      debugTask
+	    ) {
+	      self = props.ref;
+	      type = {
+	        $$typeof: REACT_ELEMENT_TYPE,
+	        type: type,
+	        key: key,
+	        props: props,
+	        _owner: owner
+	      };
+	      null !== (void 0 !== self ? self : null)
+	        ? Object.defineProperty(type, "ref", {
+	            enumerable: false,
+	            get: elementRefGetterWithDeprecationWarning
+	          })
+	        : Object.defineProperty(type, "ref", { enumerable: false, value: null });
+	      type._store = {};
+	      Object.defineProperty(type._store, "validated", {
+	        configurable: false,
+	        enumerable: false,
+	        writable: true,
+	        value: 0
+	      });
+	      Object.defineProperty(type, "_debugInfo", {
+	        configurable: false,
+	        enumerable: false,
+	        writable: true,
+	        value: null
+	      });
+	      Object.defineProperty(type, "_debugStack", {
+	        configurable: false,
+	        enumerable: false,
+	        writable: true,
+	        value: debugStack
+	      });
+	      Object.defineProperty(type, "_debugTask", {
+	        configurable: false,
+	        enumerable: false,
+	        writable: true,
+	        value: debugTask
+	      });
+	      Object.freeze && (Object.freeze(type.props), Object.freeze(type));
+	      return type;
+	    }
+	    function jsxDEVImpl(
+	      type,
+	      config,
+	      maybeKey,
+	      isStaticChildren,
+	      source,
+	      self,
+	      debugStack,
+	      debugTask
+	    ) {
+	      var children = config.children;
+	      if (void 0 !== children)
+	        if (isStaticChildren)
+	          if (isArrayImpl(children)) {
+	            for (
+	              isStaticChildren = 0;
+	              isStaticChildren < children.length;
+	              isStaticChildren++
+	            )
+	              validateChildKeys(children[isStaticChildren]);
+	            Object.freeze && Object.freeze(children);
+	          } else
+	            console.error(
+	              "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead."
+	            );
+	        else validateChildKeys(children);
+	      if (hasOwnProperty.call(config, "key")) {
+	        children = getComponentNameFromType(type);
+	        var keys = Object.keys(config).filter(function (k) {
+	          return "key" !== k;
+	        });
+	        isStaticChildren =
+	          0 < keys.length
+	            ? "{key: someKey, " + keys.join(": ..., ") + ": ...}"
+	            : "{key: someKey}";
+	        didWarnAboutKeySpread[children + isStaticChildren] ||
+	          ((keys =
+	            0 < keys.length ? "{" + keys.join(": ..., ") + ": ...}" : "{}"),
+	          console.error(
+	            'A props object containing a "key" prop is being spread into JSX:\n  let props = %s;\n  <%s {...props} />\nReact keys must be passed directly to JSX without using spread:\n  let props = %s;\n  <%s key={someKey} {...props} />',
+	            isStaticChildren,
+	            children,
+	            keys,
+	            children
+	          ),
+	          (didWarnAboutKeySpread[children + isStaticChildren] = true));
+	      }
+	      children = null;
+	      void 0 !== maybeKey &&
+	        (checkKeyStringCoercion(maybeKey), (children = "" + maybeKey));
+	      hasValidKey(config) &&
+	        (checkKeyStringCoercion(config.key), (children = "" + config.key));
+	      if ("key" in config) {
+	        maybeKey = {};
+	        for (var propName in config)
+	          "key" !== propName && (maybeKey[propName] = config[propName]);
+	      } else maybeKey = config;
+	      children &&
+	        defineKeyPropWarningGetter(
+	          maybeKey,
+	          "function" === typeof type
+	            ? type.displayName || type.name || "Unknown"
+	            : type
+	        );
+	      return ReactElement(
+	        type,
+	        children,
+	        self,
+	        source,
+	        getOwner(),
+	        maybeKey,
+	        debugStack,
+	        debugTask
+	      );
+	    }
+	    function validateChildKeys(node) {
+	      "object" === typeof node &&
+	        null !== node &&
+	        node.$$typeof === REACT_ELEMENT_TYPE &&
+	        node._store &&
+	        (node._store.validated = 1);
+	    }
+	    var React$1 = React,
+	      REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"),
+	      REACT_PORTAL_TYPE = Symbol.for("react.portal"),
+	      REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"),
+	      REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"),
+	      REACT_PROFILER_TYPE = Symbol.for("react.profiler");
+	    var REACT_CONSUMER_TYPE = Symbol.for("react.consumer"),
+	      REACT_CONTEXT_TYPE = Symbol.for("react.context"),
+	      REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"),
+	      REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"),
+	      REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"),
+	      REACT_MEMO_TYPE = Symbol.for("react.memo"),
+	      REACT_LAZY_TYPE = Symbol.for("react.lazy"),
+	      REACT_ACTIVITY_TYPE = Symbol.for("react.activity"),
+	      REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"),
+	      ReactSharedInternals =
+	        React$1.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
+	      hasOwnProperty = Object.prototype.hasOwnProperty,
+	      isArrayImpl = Array.isArray,
+	      createTask = console.createTask
+	        ? console.createTask
+	        : function () {
+	            return null;
+	          };
+	    React$1 = {
+	      "react-stack-bottom-frame": function (callStackForError) {
+	        return callStackForError();
+	      }
+	    };
+	    var specialPropKeyWarningShown;
+	    var didWarnAboutElementRef = {};
+	    var unknownOwnerDebugStack = React$1["react-stack-bottom-frame"].bind(
+	      React$1,
+	      UnknownOwner
+	    )();
+	    var unknownOwnerDebugTask = createTask(getTaskName(UnknownOwner));
+	    var didWarnAboutKeySpread = {};
+	    reactJsxRuntime_development.Fragment = REACT_FRAGMENT_TYPE;
+	    reactJsxRuntime_development.jsx = function (type, config, maybeKey, source, self) {
+	      var trackActualOwner =
+	        1e4 > ReactSharedInternals.recentlyCreatedOwnerStacks++;
+	      return jsxDEVImpl(
+	        type,
+	        config,
+	        maybeKey,
+	        false,
+	        source,
+	        self,
+	        trackActualOwner
+	          ? Error("react-stack-top-frame")
+	          : unknownOwnerDebugStack,
+	        trackActualOwner ? createTask(getTaskName(type)) : unknownOwnerDebugTask
+	      );
+	    };
+	    reactJsxRuntime_development.jsxs = function (type, config, maybeKey, source, self) {
+	      var trackActualOwner =
+	        1e4 > ReactSharedInternals.recentlyCreatedOwnerStacks++;
+	      return jsxDEVImpl(
+	        type,
+	        config,
+	        maybeKey,
+	        true,
+	        source,
+	        self,
+	        trackActualOwner
+	          ? Error("react-stack-top-frame")
+	          : unknownOwnerDebugStack,
+	        trackActualOwner ? createTask(getTaskName(type)) : unknownOwnerDebugTask
+	      );
+	    };
+	  })();
+	return reactJsxRuntime_development;
+}
+
+if (process.env.NODE_ENV === 'production') {
+  jsxRuntime.exports = requireReactJsxRuntime_production();
+} else {
+  jsxRuntime.exports = requireReactJsxRuntime_development();
+}
+
+var jsxRuntimeExports = jsxRuntime.exports;
+
+const generateId = () => {
+    return Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+};
+const getBrowserInfo = () => {
+    if (typeof navigator === 'undefined')
+        return null;
+    const userAgent = navigator.userAgent;
+    let browser = 'Unknown';
+    if (userAgent.indexOf('Chrome') > -1)
+        browser = 'Chrome';
+    else if (userAgent.indexOf('Firefox') > -1)
+        browser = 'Firefox';
+    else if (userAgent.indexOf('Safari') > -1)
+        browser = 'Safari';
+    else if (userAgent.indexOf('Edge') > -1)
+        browser = 'Edge';
+    else if (userAgent.indexOf('Opera') > -1)
+        browser = 'Opera';
+    return browser;
+};
+const getDeviceInfo = () => {
+    if (typeof navigator === 'undefined') {
+        return { type: 'unknown', os: 'unknown', browser: 'unknown' };
+    }
+    const userAgent = navigator.userAgent;
+    let type = 'desktop';
+    let os = 'Unknown';
+    // Détection du type d'appareil
+    if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)) {
+        if (/iPad/i.test(userAgent)) {
+            type = 'tablet';
+        }
+        else {
+            type = 'mobile';
+        }
+    }
+    // Détection de l'OS
+    if (userAgent.indexOf('Windows') > -1)
+        os = 'Windows';
+    else if (userAgent.indexOf('Mac') > -1)
+        os = 'macOS';
+    else if (userAgent.indexOf('Linux') > -1)
+        os = 'Linux';
+    else if (userAgent.indexOf('Android') > -1)
+        os = 'Android';
+    else if (userAgent.indexOf('iOS') > -1)
+        os = 'iOS';
+    return {
+        type,
+        os,
+        browser: getBrowserInfo()
+    };
+};
+const debounce = (func, wait) => {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), wait);
+    };
+};
+const throttle = (func, limit) => {
+    let inThrottle;
+    return (...args) => {
+        if (!inThrottle) {
+            func(...args);
+            inThrottle = true;
+            setTimeout(() => (inThrottle = false), limit);
+        }
+    };
+};
+const getElementSelector = (element) => {
+    if (element.id) {
+        return `#${element.id}`;
+    }
+    if (element.className) {
+        const classes = element.className.split(' ').filter(Boolean);
+        if (classes.length > 0) {
+            return `.${classes.join('.')}`;
+        }
+    }
+    const tagName = element.tagName.toLowerCase();
+    const parent = element.parentElement;
+    if (!parent) {
+        return tagName;
+    }
+    const siblings = (parent.children ? Array.prototype.slice.call(parent.children) : [])
+        .filter((child) => child.tagName === element.tagName);
+    if (siblings.length === 1) {
+        return `${getElementSelector(parent)} > ${tagName}`;
+    }
+    const index = siblings.indexOf(element) + 1;
+    return `${getElementSelector(parent)} > ${tagName}:nth-child(${index})`;
+};
+const sanitizeData = (data, maxDepth = 3) => {
+    if (maxDepth <= 0) {
+        return '[Max Depth Reached]';
+    }
+    if (data === null || data === undefined) {
+        return data;
+    }
+    if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') {
+        return data;
+    }
+    if (data instanceof Error) {
+        return {
+            name: data.name,
+            message: data.message,
+            stack: data.stack
+        };
+    }
+    if (Array.isArray(data)) {
+        return data.slice(0, 100).map(item => sanitizeData(item, maxDepth - 1));
+    }
+    if (typeof data === 'object') {
+        const sanitized = {};
+        let count = 0;
+        for (const key in data) {
+            if (data.hasOwnProperty(key)) {
+                if (count >= 50)
+                    break; // Limite le nombre de propriétés
+                try {
+                    sanitized[key] = sanitizeData(data[key], maxDepth - 1);
+                    count++;
+                }
+                catch (error) {
+                    sanitized[key] = '[Circular Reference]';
+                }
+            }
+        }
+        return sanitized;
+    }
+    return '[Unsupported Type]';
+};
+
+const LOG_LEVELS = {
+    debug: 0,
+    info: 1,
+    warn: 2,
+    error: 3
+};
+class Logger {
+    constructor(config) {
+        this.transports = [];
+        this.buffer = [];
+        this.config = config;
+        this.context = config.context;
+        this.startFlushTimer();
+    }
+    log(level, message, data) {
+        try {
+            // Vérification du niveau de log
+            if (LOG_LEVELS[level] < LOG_LEVELS[this.config.level]) {
+                return;
+            }
+            // Sampling
+            if (Math.random() > this.config.sampling) {
+                return;
+            }
+            // Création de l'entrée de log
+            const entry = {
+                id: generateId(),
+                timestamp: Date.now(),
+                level,
+                message,
+                data: data ? sanitizeData(data) : undefined,
+                context: Object.assign({}, this.context)
+            };
+            // Application des filtres
+            if (!this.shouldLog(entry)) {
+                return;
+            }
+            // Ajout au buffer
+            this.addToBuffer(entry);
+            // Flush immédiat pour les erreurs
+            if (level === 'error') {
+                this.flush();
+            }
+        }
+        catch (error) {
+            this.config.onError(error);
+        }
+    }
+    addTransport(transport) {
+        this.transports.push(transport);
+    }
+    updateContext(context) {
+        this.context = context;
+    }
+    async flush() {
+        if (this.buffer.length === 0) {
+            return;
+        }
+        const entries = [...this.buffer];
+        this.buffer = [];
+        const promises = this.transports.map(async (transport) => {
+            try {
+                await transport.send(entries);
+            }
+            catch (error) {
+                this.config.onError(error);
+            }
+        });
+        await Promise.all(promises);
+    }
+    destroy() {
+        if (this.flushTimer) {
+            clearInterval(this.flushTimer);
+        }
+        this.flush();
+        this.transports = [];
+        this.buffer = [];
+    }
+    shouldLog(entry) {
+        return this.config.filters.every(filter => {
+            // Filtrage par niveau
+            if (filter.level && !filter.level.includes(entry.level)) {
+                return false;
+            }
+            // Filtrage par message
+            if (filter.message && !filter.message.test(entry.message)) {
+                return false;
+            }
+            // Filtrage par contexte
+            if (filter.context && entry.context && !filter.context(entry.context)) {
+                return false;
+            }
+            return true;
+        });
+    }
+    addToBuffer(entry) {
+        this.buffer.push(entry);
+        // Limitation de la taille du buffer
+        if (this.buffer.length > this.config.bufferSize) {
+            this.buffer = this.buffer.slice(-this.config.bufferSize);
+        }
+    }
+    startFlushTimer() {
+        this.flushTimer = setInterval(() => {
+            this.flush();
+        }, this.config.flushInterval);
+    }
+}
+
+class ConsoleTransport {
+    constructor(debug = true) {
+        this.name = 'console';
+        this.debug = debug;
+    }
+    send(entries) {
+        if (!this.debug || typeof console === 'undefined') {
+            return;
+        }
+        entries.forEach(entry => {
+            const logMethod = this.getConsoleMethod(entry.level);
+            const timestamp = new Date(entry.timestamp).toISOString();
+            if (entry.data) {
+                logMethod(`[${timestamp}] [${entry.level.toUpperCase()}] ${entry.message}`, entry.data);
+            }
+            else {
+                logMethod(`[${timestamp}] [${entry.level.toUpperCase()}] ${entry.message}`);
+            }
+            // Log du contexte pour le debug
+            if (this.debug && entry.level === 'debug' && entry.context) {
+                console.groupCollapsed('Context');
+                console.table(entry.context);
+                console.groupEnd();
+            }
+        });
+    }
+    getConsoleMethod(level) {
+        switch (level) {
+            case 'debug':
+                return console.debug || console.log;
+            case 'info':
+                return console.info || console.log;
+            case 'warn':
+                return console.warn || console.log;
+            case 'error':
+                return console.error || console.log;
+            default:
+                return console.log;
+        }
+    }
+}
+
+class HttpTransport {
+    constructor(config) {
+        this.name = 'http';
+        this.queue = [];
+        this.isProcessing = false;
+        this.config = Object.assign({ timeout: 5000, retries: 3, batchSize: 10, headers: {
+                'Content-Type': 'application/json',
+            } }, config);
+    }
+    async send(entries) {
+        this.queue.push(...entries);
+        if (!this.isProcessing) {
+            await this.processQueue();
+        }
+    }
+    async flush() {
+        await this.processQueue();
+    }
+    async processQueue() {
+        if (this.isProcessing || this.queue.length === 0) {
+            return;
+        }
+        this.isProcessing = true;
+        while (this.queue.length > 0) {
+            const batch = this.queue.splice(0, this.config.batchSize);
+            await this.sendBatch(batch);
+        }
+        this.isProcessing = false;
+    }
+    async sendBatch(entries) {
+        const payload = {
+            entries,
+            timestamp: Date.now(),
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+        };
+        let lastError = null;
+        for (let attempt = 0; attempt <= this.config.retries; attempt++) {
+            try {
+                await this.makeRequest(payload);
+                return; // Succès, on sort de la boucle
+            }
+            catch (error) {
+                lastError = error;
+                if (attempt < this.config.retries) {
+                    // Attendre avant de retry avec backoff exponentiel
+                    await this.delay(Math.pow(2, attempt) * 1000);
+                }
+            }
+        }
+        // Si on arrive ici, toutes les tentatives ont échoué
+        console.error('Failed to send logs after retries:', lastError);
+    }
+    async makeRequest(payload) {
+        if (typeof fetch !== 'undefined') {
+            return this.fetchRequest(payload);
+        }
+        else if (typeof XMLHttpRequest !== 'undefined') {
+            return this.xhrRequest(payload);
+        }
+        else {
+            throw new Error('No HTTP client available');
+        }
+    }
+    async fetchRequest(payload) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
+        try {
+            const response = await fetch(this.config.endpoint, {
+                method: 'POST',
+                headers: this.config.headers,
+                body: JSON.stringify(payload),
+                signal: controller.signal,
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+        }
+        finally {
+            clearTimeout(timeoutId);
+        }
+    }
+    async xhrRequest(payload) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.timeout = this.config.timeout;
+            xhr.ontimeout = () => reject(new Error('Request timeout'));
+            xhr.onerror = () => reject(new Error('Network error'));
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    resolve();
+                }
+                else {
+                    reject(new Error(`HTTP error! status: ${xhr.status}`));
+                }
+            };
+            xhr.open('POST', this.config.endpoint);
+            // Set headers
+            if (this.config.headers) {
+                for (const key in this.config.headers) {
+                    if (this.config.headers.hasOwnProperty(key)) {
+                        xhr.setRequestHeader(key, this.config.headers[key]);
+                    }
+                }
+            }
+            xhr.send(JSON.stringify(payload));
+        });
+    }
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+}
+
+class LocalStorageTransport {
+    constructor(config = {}) {
+        this.name = 'localStorage';
+        this.config = Object.assign({ key: 'shadowtrace_logs', maxEntries: 1000, compress: false }, config);
+        if (typeof localStorage === 'undefined') {
+            throw new Error('localStorage is not available');
+        }
+    }
+    send(entries) {
+        try {
+            const existingLogs = this.getLogs();
+            const allLogs = [...existingLogs, ...entries];
+            // Limiter le nombre d'entrées
+            const limitedLogs = allLogs.slice(-this.config.maxEntries);
+            this.saveLogs(limitedLogs);
+        }
+        catch (error) {
+            console.error('Failed to save logs to localStorage:', error);
+        }
+    }
+    getLogs() {
+        try {
+            const data = localStorage.getItem(this.config.key);
+            if (!data) {
+                return [];
+            }
+            return JSON.parse(data);
+        }
+        catch (error) {
+            console.error('Failed to parse logs from localStorage:', error);
+            return [];
+        }
+    }
+    clearLogs() {
+        localStorage.removeItem(this.config.key);
+    }
+    exportLogs() {
+        const logs = this.getLogs();
+        return JSON.stringify(logs, null, 2);
+    }
+    saveLogs(logs) {
+        const data = JSON.stringify(logs);
+        localStorage.setItem(this.config.key, data);
+    }
+}
+
+class AutoTracker {
+    constructor(config, onEvent) {
+        this.listeners = [];
+        this.isActive = false;
+        this.config = Object.assign({ clicks: true, inputs: true, scrolls: false, navigation: true, errors: true, performance: false, selectors: {
+                ignore: ['[data-shadow-ignore]', '.shadow-ignore'],
+                track: []
+            } }, config);
+        this.onEvent = onEvent;
+    }
+    start() {
+        if (this.isActive || typeof window === 'undefined') {
+            return;
+        }
+        this.isActive = true;
+        if (this.config.clicks) {
+            this.trackClicks();
+        }
+        if (this.config.inputs) {
+            this.trackInputs();
+        }
+        if (this.config.scrolls) {
+            this.trackScrolls();
+        }
+        if (this.config.navigation) {
+            this.trackNavigation();
+        }
+        if (this.config.performance) {
+            this.trackPerformance();
+        }
+    }
+    stop() {
+        if (!this.isActive) {
+            return;
+        }
+        this.isActive = false;
+        this.listeners.forEach(cleanup => cleanup());
+        this.listeners = [];
+    }
+    trackClicks() {
+        const handleClick = (event) => {
+            const target = event.target;
+            if (!target || this.shouldIgnoreElement(target)) {
+                return;
+            }
+            const eventData = {
+                type: 'click',
+                element: {
+                    tagName: target.tagName,
+                    id: target.id || undefined,
+                    className: target.className || undefined,
+                    text: this.getElementText(target),
+                    attributes: this.getElementAttributes(target)
+                },
+                data: {
+                    x: event.clientX,
+                    y: event.clientY,
+                    button: event.button,
+                    ctrlKey: event.ctrlKey,
+                    shiftKey: event.shiftKey,
+                    altKey: event.altKey,
+                    selector: getElementSelector(target)
+                }
+            };
+            this.onEvent(eventData);
+        };
+        document.addEventListener('click', handleClick, true);
+        this.listeners.push(() => {
+            document.removeEventListener('click', handleClick, true);
+        });
+    }
+    trackInputs() {
+        const handleInput = debounce((event) => {
+            const target = event.target;
+            if (!target || this.shouldIgnoreElement(target)) {
+                return;
+            }
+            const eventData = {
+                type: 'input',
+                element: {
+                    tagName: target.tagName,
+                    id: target.id || undefined,
+                    className: target.className || undefined,
+                    attributes: this.getElementAttributes(target)
+                },
+                data: {
+                    type: target.type,
+                    value: this.sanitizeInputValue(target),
+                    selector: getElementSelector(target)
+                }
+            };
+            this.onEvent(eventData);
+        }, 500);
+        document.addEventListener('input', handleInput, true);
+        document.addEventListener('change', handleInput, true);
+        this.listeners.push(() => {
+            document.removeEventListener('input', handleInput, true);
+            document.removeEventListener('change', handleInput, true);
+        });
+    }
+    trackScrolls() {
+        const handleScroll = throttle(() => {
+            const eventData = {
+                type: 'scroll',
+                data: {
+                    scrollX: window.scrollX,
+                    scrollY: window.scrollY,
+                    scrollHeight: document.documentElement.scrollHeight,
+                    clientHeight: window.innerHeight,
+                    scrollPercentage: Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100)
+                }
+            };
+            this.onEvent(eventData);
+        }, 1000);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        this.listeners.push(() => {
+            window.removeEventListener('scroll', handleScroll);
+        });
+    }
+    trackNavigation() {
+        // Navigation via History API
+        const self = this;
+        const originalPushState = history.pushState;
+        const originalReplaceState = history.replaceState;
+        history.pushState = function (state, title, url) {
+            originalPushState.call(history, state, title, url);
+            self.onNavigationEvent('pushstate', url);
+        };
+        history.replaceState = function (state, title, url) {
+            originalReplaceState.call(history, state, title, url);
+            self.onNavigationEvent('replacestate', url);
+        };
+        // Navigation via popstate
+        const handlePopState = (event) => {
+            this.onNavigationEvent('popstate', window.location.href);
+        };
+        window.addEventListener('popstate', handlePopState);
+        this.listeners.push(() => {
+            history.pushState = originalPushState;
+            history.replaceState = originalReplaceState;
+            window.removeEventListener('popstate', handlePopState);
+        });
+    }
+    trackPerformance() {
+        if (typeof performance !== 'undefined' && performance.getEntriesByType) {
+            // Page Load Performance
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    const navigation = performance.getEntriesByType('navigation')[0];
+                    if (navigation) {
+                        const eventData = {
+                            type: 'custom',
+                            data: {
+                                event: 'page_load_performance',
+                                loadTime: navigation.loadEventEnd - navigation.loadEventStart,
+                                domContentLoaded: navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart,
+                                firstPaint: this.getFirstPaint(),
+                                firstContentfulPaint: this.getFirstContentfulPaint()
+                            }
+                        };
+                        this.onEvent(eventData);
+                    }
+                }, 0);
+            });
+        }
+    }
+    onNavigationEvent(type, url) {
+        const eventData = {
+            type: 'navigation',
+            data: {
+                type,
+                url: url || window.location.href,
+                referrer: document.referrer,
+                timestamp: Date.now()
+            }
+        };
+        this.onEvent(eventData);
+    }
+    shouldIgnoreElement(element) {
+        // Vérifier les sélecteurs à ignorer
+        if (this.config.selectors.ignore) {
+            for (const selector of this.config.selectors.ignore) {
+                if (element.matches && element.matches(selector)) {
+                    return true;
+                }
+            }
+        }
+        // Si des sélecteurs de tracking sont spécifiés, ne tracker que ceux-là
+        if (this.config.selectors.track && this.config.selectors.track.length > 0) {
+            for (const selector of this.config.selectors.track) {
+                if (element.matches && element.matches(selector)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+    getElementText(element) {
+        const text = element.textContent || '';
+        return text.trim().substring(0, 100); // Limiter la longueur
+    }
+    getElementAttributes(element) {
+        const attributes = {};
+        const importantAttrs = ['id', 'class', 'name', 'type', 'href', 'src', 'alt', 'title'];
+        importantAttrs.forEach(attr => {
+            const value = element.getAttribute(attr);
+            if (value) {
+                attributes[attr] = value;
+            }
+        });
+        return attributes;
+    }
+    sanitizeInputValue(input) {
+        // Ne pas logger les valeurs sensibles
+        const sensitiveTypes = ['password', 'email', 'tel', 'credit-card'];
+        const sensitiveNames = ['password', 'email', 'phone', 'credit', 'card', 'ssn'];
+        if (sensitiveTypes.includes(input.type.toLowerCase())) {
+            return '[REDACTED]';
+        }
+        const name = (input.name || input.id || '').toLowerCase();
+        if (sensitiveNames.some(sensitive => name.includes(sensitive))) {
+            return '[REDACTED]';
+        }
+        // Limiter la longueur
+        return input.value.substring(0, 100);
+    }
+    getFirstPaint() {
+        const entries = performance.getEntriesByType('paint');
+        const firstPaint = entries.find(entry => entry.name === 'first-paint');
+        return firstPaint ? firstPaint.startTime : null;
+    }
+    getFirstContentfulPaint() {
+        const entries = performance.getEntriesByType('paint');
+        const firstContentfulPaint = entries.find(entry => entry.name === 'first-contentful-paint');
+        return firstContentfulPaint ? firstContentfulPaint.startTime : null;
+    }
+}
+
+class ShadowTrace {
+    constructor(config = {}) {
+        var _a, _b, _c;
+        this.isInitialized = false;
+        // Configuration par défaut
+        this.config = {
+            apiKey: config.apiKey || '',
+            environment: config.environment || 'development',
+            debug: (_a = config.debug) !== null && _a !== void 0 ? _a : true,
+            autoTrack: (_b = config.autoTrack) !== null && _b !== void 0 ? _b : true,
+            autoTrackConfig: config.autoTrackConfig || {
+                clicks: true,
+                inputs: true,
+                scrolls: false,
+                navigation: true,
+                errors: true,
+                performance: false,
+                selectors: {
+                    ignore: ['[data-shadow-ignore]', '.shadow-ignore'],
+                    track: []
+                }
+            },
+            transports: config.transports || ['console'],
+            httpConfig: config.httpConfig || {
+                endpoint: '/api/logs',
+                headers: {},
+                timeout: 5000,
+                retries: 3,
+                batchSize: 10
+            },
+            level: config.level || 'debug',
+            sampling: (_c = config.sampling) !== null && _c !== void 0 ? _c : 1,
+            bufferSize: config.bufferSize || 100,
+            flushInterval: config.flushInterval || 10000,
+            context: config.context || {},
+            filters: config.filters || [],
+            onError: config.onError || (() => { })
+        };
+        // Contexte par défaut
+        this.context = Object.assign({ sessionId: generateId(), url: typeof window !== 'undefined' ? window.location.href : '', referrer: typeof document !== 'undefined' ? document.referrer : '', userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '', viewport: typeof window !== 'undefined' ? {
+                width: window.innerWidth,
+                height: window.innerHeight
+            } : { width: 0, height: 0 }, device: (() => {
+                const deviceInfo = getDeviceInfo();
+                return Object.assign(Object.assign({}, deviceInfo), { browser: deviceInfo.browser === null ? undefined : deviceInfo.browser });
+            })() }, this.config.context);
+        // Initialisation du logger
+        this.logger = new Logger({
+            level: this.config.level,
+            context: this.context,
+            bufferSize: this.config.bufferSize,
+            flushInterval: this.config.flushInterval,
+            filters: this.config.filters,
+            sampling: this.config.sampling,
+            onError: this.config.onError
+        });
+        // Ajout des transports
+        this.setupTransports();
+    }
+    init() {
+        if (this.isInitialized) {
+            return;
+        }
+        // Initialisation de l'auto-tracking
+        if (this.config.autoTrack && typeof window !== 'undefined') {
+            this.autoTracker = new AutoTracker(this.config.autoTrackConfig, (event) => {
+                this.track(event.type, event);
+            });
+            this.autoTracker.start();
+        }
+        // Capture des erreurs globales
+        if (typeof window !== 'undefined') {
+            this.setupGlobalErrorHandling();
+        }
+        this.isInitialized = true;
+        this.info('ShadowTrace initialized', {
+            config: {
+                environment: this.config.environment,
+                autoTrack: this.config.autoTrack,
+                transports: this.config.transports
+            }
+        });
+    }
+    debug(message, data) {
+        this.logger.log('debug', message, data);
+    }
+    info(message, data) {
+        this.logger.log('info', message, data);
+    }
+    warn(message, data) {
+        this.logger.log('warn', message, data);
+    }
+    error(message, data) {
+        this.logger.log('error', message, data);
+    }
+    track(event, data) {
+        this.logger.log('info', `Event: ${event}`, Object.assign(Object.assign({ event }, data), { _type: 'track' }));
+    }
+    setContext(context) {
+        this.context = Object.assign(Object.assign({}, this.context), context);
+        this.logger.updateContext(this.context);
+    }
+    setUserId(userId) {
+        this.setContext({ userId });
+    }
+    addTransport(transport) {
+        this.logger.addTransport(transport);
+    }
+    async flush() {
+        await this.logger.flush();
+    }
+    destroy() {
+        if (this.autoTracker) {
+            this.autoTracker.stop();
+        }
+        this.logger.destroy();
+        this.isInitialized = false;
+    }
+    setupTransports() {
+        this.config.transports.forEach((transportType) => {
+            try {
+                switch (transportType) {
+                    case 'console':
+                        this.logger.addTransport(new ConsoleTransport(this.config.debug));
+                        break;
+                    case 'http':
+                        if (this.config.httpConfig) {
+                            this.logger.addTransport(new HttpTransport(this.config.httpConfig));
+                        }
+                        break;
+                    case 'localStorage':
+                        if (typeof localStorage !== 'undefined') {
+                            this.logger.addTransport(new LocalStorageTransport());
+                        }
+                        break;
+                }
+            }
+            catch (error) {
+                console.warn(`Failed to setup transport: ${transportType}`, error);
+            }
+        });
+    }
+    setupGlobalErrorHandling() {
+        // Erreurs JavaScript
+        window.addEventListener('error', (event) => {
+            var _a;
+            this.error('JavaScript Error', {
+                message: event.message,
+                filename: event.filename,
+                lineno: event.lineno,
+                colno: event.colno,
+                error: (_a = event.error) === null || _a === void 0 ? void 0 : _a.stack,
+                _type: 'javascript_error'
+            });
+        });
+        // Promesses rejetées
+        window.addEventListener('unhandledrejection', (event) => {
+            this.error('Unhandled Promise Rejection', {
+                reason: event.reason,
+                promise: event.promise,
+                _type: 'promise_rejection'
+            });
+        });
+        // Erreurs de ressources
+        window.addEventListener('error', (event) => {
+            var _a, _b, _c;
+            if (event.target !== window) {
+                this.error('Resource Error', {
+                    element: (_a = event.target) === null || _a === void 0 ? void 0 : _a.tagName,
+                    source: ((_b = event.target) === null || _b === void 0 ? void 0 : _b.src) || ((_c = event.target) === null || _c === void 0 ? void 0 : _c.href),
+                    _type: 'resource_error'
+                });
+            }
+        }, true);
+    }
+}
+
+const ShadowTraceContext = React.createContext(null);
+function ShadowTraceProvider({ config, children, }) {
+    const loggerRef = React.useRef(null);
+    React.useEffect(() => {
+        // Créer et initialiser le logger
+        loggerRef.current = new ShadowTrace(config);
+        loggerRef.current.init();
+        // Cleanup à la destruction
+        return () => {
+            if (loggerRef.current) {
+                loggerRef.current.destroy();
+            }
+        };
+    }, []);
+    return (jsxRuntimeExports.jsx(ShadowTraceContext.Provider, { value: loggerRef.current, children: children }));
+}
+function useShadowTrace() {
+    const logger = React.useContext(ShadowTraceContext);
+    if (!logger) {
+        throw new Error("useShadowTrace must be used within a ShadowTraceProvider");
+    }
+    return {
+        debug: (message, data) => logger.debug(message, data),
+        info: (message, data) => logger.info(message, data),
+        warn: (message, data) => logger.warn(message, data),
+        error: (message, data) => logger.error(message, data),
+        track: (event, data) => logger.track(event, data),
+        setContext: (context) => logger.setContext(context),
+        setUserId: (userId) => logger.setUserId(userId),
+    };
+}
+// Hook pour tracker automatiquement le cycle de vie d'un composant
+function useComponentLifecycle(componentName) {
+    const logger = useShadowTrace();
+    React.useEffect(() => {
+        logger.debug(`Component mounted: ${componentName}`);
+        return () => {
+            logger.debug(`Component unmounted: ${componentName}`);
+        };
+    }, [componentName, logger]);
+}
+// Hook pour tracker les erreurs dans un composant
+function useErrorTracking(componentName) {
+    const logger = useShadowTrace();
+    React.useEffect(() => {
+        const handleError = (event) => {
+            logger.error(`Error in ${componentName}`, {
+                message: event.message,
+                filename: event.filename,
+                lineno: event.lineno,
+                colno: event.colno,
+                error: event.error,
+            });
+        };
+        window.addEventListener("error", handleError);
+        return () => window.removeEventListener("error", handleError);
+    }, [componentName, logger]);
+}
+// HOC pour wrapper un composant avec le logging automatique
+function withShadowTrace(WrappedComponent, componentName) {
+    const displayName = componentName ||
+        WrappedComponent.displayName ||
+        WrappedComponent.name ||
+        "Component";
+    const ShadowTraceWrapper = (props) => {
+        useComponentLifecycle(displayName);
+        useErrorTracking(displayName);
+        return jsxRuntimeExports.jsx(WrappedComponent, Object.assign({}, props));
+    };
+    ShadowTraceWrapper.displayName = `withShadowTrace(${displayName})`;
+    return ShadowTraceWrapper;
+}
+function TrackClick({ eventName, eventData, children, }) {
+    const logger = useShadowTrace();
+    const handleClick = (originalOnClick) => {
+        return (event) => {
+            // Logger l'événement
+            logger.track(eventName, Object.assign(Object.assign({}, eventData), { timestamp: Date.now(), target: {
+                    tagName: event.target.tagName,
+                    id: event.target.id,
+                    className: event.target.className,
+                } }));
+            // Exécuter le onClick original s'il existe
+            if (originalOnClick) {
+                originalOnClick();
+            }
+        };
+    };
+    return React.cloneElement(children, {
+        onClick: handleClick(children.props.onClick),
+    });
+}
+function TrackForm({ formName, children }) {
+    const logger = useShadowTrace();
+    const handleSubmit = (originalOnSubmit) => {
+        return (event) => {
+            const formData = new FormData(event.currentTarget);
+            const data = {};
+            // Collecter les données du formulaire (sans les valeurs sensibles)
+            formData.forEach((value, key) => {
+                if (!key.toLowerCase().includes("password")) {
+                    data[key] = value.toString().substring(0, 100);
+                }
+            });
+            logger.track("form_submit", {
+                formName,
+                fields: Object.keys(data),
+                timestamp: Date.now(),
+            });
+            if (originalOnSubmit) {
+                originalOnSubmit(event);
+            }
+        };
+    };
+    return React.cloneElement(children, {
+        onSubmit: handleSubmit(children.props.onSubmit),
+    });
+}
+
+exports.ShadowTraceProvider = ShadowTraceProvider;
+exports.TrackClick = TrackClick;
+exports.TrackForm = TrackForm;
+exports.useComponentLifecycle = useComponentLifecycle;
+exports.useErrorTracking = useErrorTracking;
+exports.useShadowTrace = useShadowTrace;
+exports.withShadowTrace = withShadowTrace;
+//# sourceMappingURL=react.js.map

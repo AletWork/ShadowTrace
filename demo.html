@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShadowTrace Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .demo-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .error-btn {
+            background: #dc3545;
+        }
+        .error-btn:hover {
+            background: #c82333;
+        }
+        input, textarea {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+        .log-output {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 ShadowTrace - Demo Frontend Logger</h1>
+    
+    <div class="demo-section">
+        <h2>Actions Utilisateur</h2>
+        <button id="loginBtn">Login</button>
+        <button id="purchaseBtn">Acheter</button>
+        <button id="shareBtn">Partager</button>
+        <button class="error-btn" onclick="triggerError()">Déclencher Erreur</button>
+    </div>
+
+    <div class="demo-section">
+        <h2>Formulaires</h2>
+        <form id="userForm">
+            <input type="text" name="username" placeholder="Nom d'utilisateur" required>
+            <input type="email" name="email" placeholder="Email" required>
+            <textarea name="feedback" placeholder="Vos commentaires"></textarea>
+            <button type="submit">Envoyer</button>
+        </form>
+    </div>
+
+    <div class="demo-section">
+        <h2>Navigation</h2>
+        <button onclick="navigateTo('/products')">Produits</button>
+        <button onclick="navigateTo('/cart')">Panier</button>
+        <button onclick="navigateTo('/profile')">Profil</button>
+    </div>
+
+    <div class="demo-section">
+        <h2>Logs en Temps Réel</h2>
+        <div id="logOutput" class="log-output"></div>
+        <button onclick="clearLogs()">Effacer logs</button>
+        <button onclick="exportLogs()">Exporter logs</button>
+    </div>
+
+    <script type="module">
+        // Simulation de ShadowTrace en attendant la compilation
+        class SimpleShadowTrace {
+            constructor() {
+                this.logs = [];
+                this.context = {
+                    sessionId: this.generateId(),
+                    url: window.location.href,
+                    userAgent: navigator.userAgent,
+                    timestamp: Date.now()
+                };
+                this.setupAutoTracking();
+                this.setupErrorHandling();
+            }
+
+            generateId() {
+                return Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+            }
+
+            log(level, message, data = {}) {
+                const entry = {
+                    id: this.generateId(),
+                    timestamp: Date.now(),
+                    level,
+                    message,
+                    data,
+                    context: this.context
+                };
+                
+                this.logs.push(entry);
+                this.displayLog(entry);
+                
+                // Console log
+                console[level] || console.log(`[${level.toUpperCase()}] ${message}`, data);
+            }
+
+            info(message, data) { this.log('info', message, data); }
+            warn(message, data) { this.log('warn', message, data); }
+            error(message, data) { this.log('error', message, data); }
+            debug(message, data) { this.log('debug', message, data); }
+
+            track(event, data) {
+                this.log('info', `Event: ${event}`, { event, ...data, _type: 'track' });
+            }
+
+            setupAutoTracking() {
+                // Track clicks
+                document.addEventListener('click', (e) => {
+                    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') {
+                        this.track('click', {
+                            element: e.target.tagName,
+                            text: e.target.textContent,
+                            id: e.target.id,
+                            className: e.target.className
+                        });
+                    }
+                });
+
+                // Track form submissions
+                document.addEventListener('submit', (e) => {
+                    const formData = new FormData(e.target);
+                    const data = {};
+                    formData.forEach((value, key) => {
+                        data[key] = value.substring(0, 50); // Truncate for demo
+                    });
+                    
+                    this.track('form_submit', {
+                        form: e.target.id || 'anonymous',
+                        fields: Object.keys(data)
+                    });
+                });
+
+                // Track input changes (debounced)
+                let inputTimeout;
+                document.addEventListener('input', (e) => {
+                    clearTimeout(inputTimeout);
+                    inputTimeout = setTimeout(() => {
+                        if (e.target.type !== 'password') {
+                            this.track('input_change', {
+                                field: e.target.name || e.target.id,
+                                type: e.target.type,
+                                valueLength: e.target.value.length
+                            });
+                        }
+                    }, 500);
+                });
+            }
+
+            setupErrorHandling() {
+                window.addEventListener('error', (e) => {
+                    this.error('JavaScript Error', {
+                        message: e.message,
+                        filename: e.filename,
+                        lineno: e.lineno,
+                        colno: e.colno,
+                        stack: e.error ? e.error.stack : null
+                    });
+                });
+
+                window.addEventListener('unhandledrejection', (e) => {
+                    this.error('Unhandled Promise Rejection', {
+                        reason: e.reason
+                    });
+                });
+            }
+
+            displayLog(entry) {
+                const output = document.getElementById('logOutput');
+                const logLine = document.createElement('div');
+                const time = new Date(entry.timestamp).toLocaleTimeString();
+                
+                logLine.innerHTML = `
+                    <span style="color: #666;">[${time}]</span>
+                    <span style="color: ${this.getLevelColor(entry.level)};">[${entry.level.toUpperCase()}]</span>
+                    <span style="color: #fff;">${entry.message}</span>
+                    ${Object.keys(entry.data).length > 0 ? 
+                        `<span style="color: #yellow; margin-left: 10px;">${JSON.stringify(entry.data)}</span>` 
+                        : ''
+                    }
+                `;
+                
+                output.appendChild(logLine);
+                output.scrollTop = output.scrollHeight;
+            }
+
+            getLevelColor(level) {
+                const colors = {
+                    debug: '#888',
+                    info: '#0ff',
+                    warn: '#ff0',
+                    error: '#f00'
+                };
+                return colors[level] || '#fff';
+            }
+
+            clearLogs() {
+                this.logs = [];
+                document.getElementById('logOutput').innerHTML = '';
+            }
+
+            exportLogs() {
+                const logsJson = JSON.stringify(this.logs, null, 2);
+                const blob = new Blob([logsJson], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `shadowtrace-logs-${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        // Initialize ShadowTrace
+        const logger = new SimpleShadowTrace();
+        window.logger = logger; // Make it globally available
+
+        // Demo functions
+        window.triggerError = function() {
+            throw new Error('Erreur de démonstration !');
+        };
+
+        window.navigateTo = function(path) {
+            // Simulate navigation
+            logger.track('navigation', { 
+                from: window.location.pathname, 
+                to: path,
+                method: 'programmatic'
+            });
+            
+            // Update URL without actually navigating
+            history.pushState({}, '', path);
+            logger.info(`Navigation vers ${path}`);
+        };
+
+        window.clearLogs = function() {
+            logger.clearLogs();
+        };
+
+        window.exportLogs = function() {
+            logger.exportLogs();
+        };
+
+        // Demo interactions
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            logger.track('user_action', { action: 'login_attempt', method: 'button' });
+            logger.info('Tentative de connexion');
+        });
+
+        document.getElementById('purchaseBtn').addEventListener('click', () => {
+            logger.track('conversion', { 
+                action: 'purchase_intent',
+                value: 99.99,
+                currency: 'EUR'
+            });
+            logger.info('Intention d\'achat détectée');
+        });
+
+        document.getElementById('shareBtn').addEventListener('click', () => {
+            logger.track('engagement', { action: 'share_click', platform: 'demo' });
+            logger.info('Partage initié');
+        });
+
+        // Log initial page load
+        logger.info('Page chargée', {
+            url: window.location.href,
+            referrer: document.referrer,
+            loadTime: performance.now()
+        });
+
+        logger.track('page_view', {
+            page: window.location.pathname,
+            title: document.title
+        });
+    </script>
+</body>
+</html>
