@@ -1,3 +1,6 @@
+import * as react_jsx_runtime from 'react/jsx-runtime';
+import React from 'react';
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 type TransportType = 'console' | 'http' | 'localStorage' | 'custom';
@@ -94,6 +97,22 @@ interface ShadowTraceInstance {
   destroy(): void;
 }
 
+// React types
+interface ShadowTraceProviderProps {
+  config: ShadowTraceConfig;
+  children: any; // React.ReactNode when React is available
+}
+
+interface UseShadowTraceHook {
+  debug: (message: string, data?: any) => void;
+  info: (message: string, data?: any) => void;
+  warn: (message: string, data?: any) => void;
+  error: (message: string, data?: any) => void;
+  track: (event: string, data?: any) => void;
+  setContext: (context: Partial<LogContext>) => void;
+  setUserId: (userId: string) => void;
+}
+
 interface LoggerConfig {
     level: LogLevel;
     context: LogContext;
@@ -180,6 +199,26 @@ declare class IndexedDBTransport implements Transport {
     private cleanup;
 }
 
+declare function ShadowTraceProvider({ config, children, }: ShadowTraceProviderProps): react_jsx_runtime.JSX.Element;
+declare function useShadowTrace(): UseShadowTraceHook;
+declare function useComponentLifecycle(componentName: string): void;
+declare function useErrorTracking(componentName: string): void;
+declare function withShadowTrace<P extends object>(WrappedComponent: React.ComponentType<P>, componentName?: string): {
+    (props: P): react_jsx_runtime.JSX.Element;
+    displayName: string;
+};
+interface TrackClickProps {
+    eventName: string;
+    eventData?: any;
+    children: React.ReactElement<any>;
+}
+declare function TrackClick({ eventName, eventData, children, }: TrackClickProps): React.ReactElement<any, string | React.JSXElementConstructor<any>>;
+interface TrackFormProps {
+    formName: string;
+    children: React.ReactElement<any, any>;
+}
+declare function TrackForm({ formName, children }: TrackFormProps): React.FunctionComponentElement<any>;
+
 declare class ShadowTrace implements ShadowTraceInstance {
     private logger;
     private autoTracker?;
@@ -210,4 +249,4 @@ declare const warn: (message: string, data?: any) => void;
 declare const error: (message: string, data?: any) => void;
 declare const track: (event: string, data?: any) => void;
 
-export { ConsoleTransport, HttpTransport, IndexedDBTransport, LocalStorageTransport, Logger, ShadowTrace, createLogger, debug, error, getDefaultLogger, info, init, track, warn };
+export { ConsoleTransport, HttpTransport, IndexedDBTransport, LocalStorageTransport, Logger, ShadowTrace, ShadowTraceProvider, TrackClick, TrackForm, createLogger, debug, error, getDefaultLogger, info, init, track, useComponentLifecycle, useErrorTracking, useShadowTrace, warn, withShadowTrace };
