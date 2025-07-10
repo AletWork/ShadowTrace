@@ -1,3 +1,5 @@
+import * as react_jsx_runtime from 'react/jsx-runtime';
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 type TransportType = 'console' | 'http' | 'localStorage' | 'custom';
@@ -107,6 +109,12 @@ interface ShadowTraceInstance {
   destroy(): void;
 }
 
+// React types
+interface ShadowTraceProviderProps {
+  config: ShadowTraceConfig;
+  children: any; // React.ReactNode when React is available
+}
+
 interface LoggerConfig {
     level: LogLevel;
     context: LogContext;
@@ -193,6 +201,8 @@ declare class IndexedDBTransport implements Transport {
     private cleanup;
 }
 
+declare function ShadowTraceProvider({ config, children, }: ShadowTraceProviderProps): react_jsx_runtime.JSX.Element;
+
 declare class ShadowTrace implements ShadowTraceInstance {
     private logger;
     private autoTracker?;
@@ -231,4 +241,4 @@ declare const warn: (message: string, data?: any) => void;
 declare const error: (message: string, data?: any) => void;
 declare const track: (event: string, data?: any) => void;
 
-export { ConsoleTransport, HttpTransport, IndexedDBTransport, LocalStorageTransport, Logger, ShadowTrace, createLogger, debug, error, getDefaultLogger, info, init, track, warn };
+export { ConsoleTransport, HttpTransport, IndexedDBTransport, LocalStorageTransport, Logger, ShadowTrace, ShadowTraceProvider, createLogger, debug, error, getDefaultLogger, info, init, track, warn };

@@ -293,3 +293,4 @@ export { ConsoleTransport } from './transport/console';
 export { HttpTransport } from './transport/http';
 export { LocalStorageTransport } from './transport/localStorage';
 export { IndexedDBTransport } from './transport/indexedDB';
+export { ShadowTraceProvider } from './react';
