@@ -75,9 +75,20 @@ const getElementSelector = (element) => {
         return `#${element.id}`;
     }
     if (element.className) {
-        const classes = element.className.split(' ').filter(Boolean);
-        if (classes.length > 0) {
-            return `.${classes.join('.')}`;
+        // Handle both string and SVGAnimatedString cases
+        let className = '';
+        if (typeof element.className === 'string') {
+            className = element.className;
+        }
+        else if (element.className && typeof element.className === 'object') {
+            // For SVG elements, className is an SVGAnimatedString
+            className = element.className.baseVal || element.className.animVal || '';
+        }
+        if (className) {
+            const classes = className.split(' ').filter(Boolean);
+            if (classes.length > 0) {
+                return `.${classes.join('.')}`;
+            }
         }
     }
     const tagName = element.tagName.toLowerCase();
