@@ -1,6 +1,3 @@
-import * as react_jsx_runtime from 'react/jsx-runtime';
-import React from 'react';
-
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 type TransportType = 'console' | 'http' | 'localStorage' | 'custom';
@@ -33,6 +30,12 @@ interface LogContext {
   };
 }
 
+interface ApiDuplicateDetectionConfig {
+  enabled?: boolean;
+  windowMs?: number;
+  threshold?: number;
+}
+
 interface ShadowTraceConfig {
   apiKey?: string;
   environment?: string;
@@ -48,6 +51,7 @@ interface ShadowTraceConfig {
   context?: Partial<LogContext>;
   filters?: LogFilter[];
   onError?: (error: Error) => void;
+  apiDuplicateDetection?: ApiDuplicateDetectionConfig;
 }
 
 interface AutoTrackConfig {
@@ -57,6 +61,12 @@ interface AutoTrackConfig {
   navigation?: boolean;
   errors?: boolean;
   performance?: boolean;
+  webVitals?: boolean;
+  slowPages?: boolean;
+  memoryUsage?: boolean;
+  consoleErrors?: boolean;
+  unhandledPromises?: boolean;
+  resourceErrors?: boolean;
   selectors?: {
     ignore?: string[];
     track?: string[];
@@ -95,22 +105,6 @@ interface ShadowTraceInstance {
   addTransport(transport: Transport): void;
   flush(): Promise<void>;
   destroy(): void;
-}
-
-// React types
-interface ShadowTraceProviderProps {
-  config: ShadowTraceConfig;
-  children: any; // React.ReactNode when React is available
-}
-
-interface UseShadowTraceHook {
-  debug: (message: string, data?: any) => void;
-  info: (message: string, data?: any) => void;
-  warn: (message: string, data?: any) => void;
-  error: (message: string, data?: any) => void;
-  track: (event: string, data?: any) => void;
-  setContext: (context: Partial<LogContext>) => void;
-  setUserId: (userId: string) => void;
 }
 
 interface LoggerConfig {
@@ -199,32 +193,13 @@ declare class IndexedDBTransport implements Transport {
     private cleanup;
 }
 
-declare function ShadowTraceProvider({ config, children, }: ShadowTraceProviderProps): react_jsx_runtime.JSX.Element;
-declare function useShadowTrace(): UseShadowTraceHook;
-declare function useComponentLifecycle(componentName: string): void;
-declare function useErrorTracking(componentName: string): void;
-declare function withShadowTrace<P extends object>(WrappedComponent: React.ComponentType<P>, componentName?: string): {
-    (props: P): react_jsx_runtime.JSX.Element;
-    displayName: string;
-};
-interface TrackClickProps {
-    eventName: string;
-    eventData?: any;
-    children: React.ReactElement<any>;
-}
-declare function TrackClick({ eventName, eventData, children, }: TrackClickProps): React.ReactElement<any, string | React.JSXElementConstructor<any>>;
-interface TrackFormProps {
-    formName: string;
-    children: React.ReactElement<any, any>;
-}
-declare function TrackForm({ formName, children }: TrackFormProps): React.FunctionComponentElement<any>;
-
 declare class ShadowTrace implements ShadowTraceInstance {
     private logger;
     private autoTracker?;
     private config;
     private context;
     private isInitialized;
+    private apiDuplicateDetector?;
     constructor(config?: ShadowTraceConfig);
     init(): void;
     debug(message: string, data?: any): void;
@@ -232,6 +207,13 @@ declare class ShadowTrace implements ShadowTraceInstance {
     warn(message: string, data?: any): void;
     error(message: string, data?: any): void;
     track(event: string, data?: any): void;
+    /**
+     * Log un appel API et détecte les doublons (si activé)
+     * @param url URL de l'appel
+     * @param params Paramètres de l'appel
+     * @param component Nom du composant (optionnel)
+     */
+    logApiCall(url: string, params?: any, component?: string): void;
     setContext(context: Partial<LogContext>): void;
     setUserId(userId: string): void;
     addTransport(transport: Transport): void;
@@ -249,4 +231,4 @@ declare const warn: (message: string, data?: any) => void;
 declare const error: (message: string, data?: any) => void;
 declare const track: (event: string, data?: any) => void;
 
-export { ConsoleTransport, HttpTransport, IndexedDBTransport, LocalStorageTransport, Logger, ShadowTrace, ShadowTraceProvider, TrackClick, TrackForm, createLogger, debug, error, getDefaultLogger, info, init, track, useComponentLifecycle, useErrorTracking, useShadowTrace, warn, withShadowTrace };
+export { ConsoleTransport, HttpTransport, IndexedDBTransport, LocalStorageTransport, Logger, ShadowTrace, createLogger, debug, error, getDefaultLogger, info, init, track, warn };

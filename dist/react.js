@@ -471,7 +471,7 @@ const getDeviceInfo = () => {
     return {
         type,
         os,
-        browser: getBrowserInfo()
+        browser: getBrowserInfo() || 'unknown'
     };
 };
 const debounce = (func, wait) => {
@@ -496,20 +496,9 @@ const getElementSelector = (element) => {
         return `#${element.id}`;
     }
     if (element.className) {
-        // Handle both string and SVGAnimatedString cases
-        let className = '';
-        if (typeof element.className === 'string') {
-            className = element.className;
-        }
-        else if (element.className && typeof element.className === 'object') {
-            // For SVG elements, className is an SVGAnimatedString
-            className = element.className.baseVal || element.className.animVal || '';
-        }
-        if (className) {
-            const classes = className.split(' ').filter(Boolean);
-            if (classes.length > 0) {
-                return `.${classes.join('.')}`;
-            }
+        const classes = element.className.split(' ').filter(Boolean);
+        if (classes.length > 0) {
+            return `.${classes.join('.')}`;
         }
     }
     const tagName = element.tagName.toLowerCase();
@@ -1424,9 +1413,53 @@ class AutoTracker {
     }
 }
 
+const DEFAULT_OPTIONS = {
+    windowMs: 1000, // 1 seconde
+    threshold: 3
+};
+class ApiDuplicateDetector {
+    constructor(logger, options) {
+        this.calls = {};
+        this.logger = logger;
+        this.options = Object.assign(Object.assign({}, DEFAULT_OPTIONS), options);
+    }
+    logApiCall(url, params, component) {
+        const key = this.getKey(url, params);
+        const now = Date.now();
+        if (!this.calls[key]) {
+            this.calls[key] = [];
+        }
+        this.calls[key].push(now);
+        // Nettoyage de l'historique
+        this.calls[key] = this.calls[key].filter(ts => now - ts < this.options.windowMs);
+        if (this.calls[key].length >= this.options.threshold) {
+            this.logger.warn('API call duplicate detected', {
+                url,
+                params,
+                count: this.calls[key].length,
+                windowMs: this.options.windowMs,
+                component,
+                stack: (new Error().stack || '').split('\n').slice(1, 6).join('\n')
+            });
+            // On évite de spammer en réinitialisant
+            this.calls[key] = [];
+        }
+    }
+    getKey(url, params) {
+        let paramsString = '';
+        try {
+            paramsString = params ? JSON.stringify(params) : '';
+        }
+        catch (_a) {
+            paramsString = '[unserializable]';
+        }
+        return `${url}|${paramsString}`;
+    }
+}
+
 class ShadowTrace {
     constructor(config = {}) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d;
         this.isInitialized = false;
         // Configuration par défaut
         this.config = {
@@ -1460,16 +1493,14 @@ class ShadowTrace {
             flushInterval: config.flushInterval || 10000,
             context: config.context || {},
             filters: config.filters || [],
-            onError: config.onError || (() => { })
+            onError: config.onError || (() => { }),
+            apiDuplicateDetection: config.apiDuplicateDetection || { enabled: false }
         };
         // Contexte par défaut
         this.context = Object.assign({ sessionId: generateId(), url: typeof window !== 'undefined' ? window.location.href : '', referrer: typeof document !== 'undefined' ? document.referrer : '', userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '', viewport: typeof window !== 'undefined' ? {
                 width: window.innerWidth,
                 height: window.innerHeight
-            } : { width: 0, height: 0 }, device: (() => {
-                const deviceInfo = getDeviceInfo();
-                return Object.assign(Object.assign({}, deviceInfo), { browser: deviceInfo.browser === null ? undefined : deviceInfo.browser });
-            })() }, this.config.context);
+            } : { width: 0, height: 0 }, device: getDeviceInfo() }, this.config.context);
         // Initialisation du logger
         this.logger = new Logger({
             level: this.config.level,
@@ -1482,6 +1513,10 @@ class ShadowTrace {
         });
         // Ajout des transports
         this.setupTransports();
+        // Initialisation du détecteur de doublons API si activé
+        if ((_d = this.config.apiDuplicateDetection) === null || _d === void 0 ? void 0 : _d.enabled) {
+            this.apiDuplicateDetector = new ApiDuplicateDetector(this, this.config.apiDuplicateDetection);
+        }
     }
     init() {
         if (this.isInitialized) {
@@ -1522,6 +1557,19 @@ class ShadowTrace {
     track(event, data) {
         this.logger.log('info', `Event: ${event}`, Object.assign(Object.assign({ event }, data), { _type: 'track' }));
     }
+    /**
+     * Log un appel API et détecte les doublons (si activé)
+     * @param url URL de l'appel
+     * @param params Paramètres de l'appel
+     * @param component Nom du composant (optionnel)
+     */
+    logApiCall(url, params, component) {
+        if (this.apiDuplicateDetector) {
+            this.apiDuplicateDetector.logApiCall(url, params, component);
+        }
+        // Log normal de l'appel API (optionnel)
+        this.logger.log('info', 'API call', { url, params, component, _type: 'api_call' });
+    }
     setContext(context) {
         this.context = Object.assign(Object.assign({}, this.context), context);
         this.logger.updateContext(this.context);
@@ -1543,7 +1591,7 @@ class ShadowTrace {
         this.isInitialized = false;
     }
     setupTransports() {
-        this.config.transports.forEach((transportType) => {
+        this.config.transports.forEach(transportType => {
             try {
                 switch (transportType) {
                     case 'console':

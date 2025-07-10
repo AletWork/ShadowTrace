@@ -5,15 +5,15 @@ import { LocalStorageTransport } from './transport/localStorage';
 import { IndexedDBTransport } from './transport/indexedDB';
 import { AutoTracker } from './auto-tracker';
 import { generateId, getBrowserInfo, getDeviceInfo } from './utils';
+import { ApiDuplicateDetector } from './apiDuplicateDetector';
 import type {
   ShadowTraceConfig,
   ShadowTraceInstance,
   LogLevel,
   LogContext,
   Transport,
-  AutoTrackConfig,
-  TransportType
-} from '../types/index';
+  AutoTrackConfig
+} from '../types';
 
 export class ShadowTrace implements ShadowTraceInstance {
   private logger: Logger;
@@ -21,6 +21,7 @@ export class ShadowTrace implements ShadowTraceInstance {
   private config: Required<ShadowTraceConfig>;
   private context: LogContext;
   private isInitialized = false;
+  private apiDuplicateDetector?: ApiDuplicateDetector;
 
   constructor(config: ShadowTraceConfig = {}) {
     // Configuration par défaut
@@ -39,7 +40,7 @@ export class ShadowTrace implements ShadowTraceInstance {
         selectors: {
           ignore: ['[data-shadow-ignore]', '.shadow-ignore'],
           track: []
-        } as { ignore?: string[]; track?: string[] }
+        }
       },
       transports: config.transports || ['console'],
       httpConfig: config.httpConfig || {
@@ -55,7 +56,8 @@ export class ShadowTrace implements ShadowTraceInstance {
       flushInterval: config.flushInterval || 10000,
       context: config.context || {},
       filters: config.filters || [],
-      onError: config.onError || (() => {})
+      onError: config.onError || (() => {}),
+      apiDuplicateDetection: config.apiDuplicateDetection || { enabled: false }
     };
 
     // Contexte par défaut
@@ -68,13 +70,7 @@ export class ShadowTrace implements ShadowTraceInstance {
         width: window.innerWidth,
         height: window.innerHeight
       } : { width: 0, height: 0 },
-      device: (() => {
-        const deviceInfo = getDeviceInfo();
-        return {
-          ...deviceInfo,
-          browser: deviceInfo.browser === null ? undefined : deviceInfo.browser
-        };
-      })(),
+      device: getDeviceInfo(),
       ...this.config.context
     };
 
@@ -91,6 +87,11 @@ export class ShadowTrace implements ShadowTraceInstance {
 
     // Ajout des transports
     this.setupTransports();
+
+    // Initialisation du détecteur de doublons API si activé
+    if (this.config.apiDuplicateDetection?.enabled) {
+      this.apiDuplicateDetector = new ApiDuplicateDetector(this, this.config.apiDuplicateDetection);
+    }
   }
 
   init(): void {
@@ -145,6 +146,20 @@ export class ShadowTrace implements ShadowTraceInstance {
     });
   }
 
+  /**
+   * Log un appel API et détecte les doublons (si activé)
+   * @param url URL de l'appel
+   * @param params Paramètres de l'appel
+   * @param component Nom du composant (optionnel)
+   */
+  logApiCall(url: string, params?: any, component?: string) {
+    if (this.apiDuplicateDetector) {
+      this.apiDuplicateDetector.logApiCall(url, params, component);
+    }
+    // Log normal de l'appel API (optionnel)
+    this.logger.log('info', 'API call', { url, params, component, _type: 'api_call' });
+  }
+
   setContext(context: Partial<LogContext>): void {
     this.context = { ...this.context, ...context };
     this.logger.updateContext(this.context);
@@ -171,7 +186,7 @@ export class ShadowTrace implements ShadowTraceInstance {
   }
 
   private setupTransports(): void {
-    (this.config.transports as TransportType[]).forEach((transportType: TransportType) => {
+    this.config.transports.forEach(transportType => {
       try {
         switch (transportType) {
           case 'console':
@@ -278,12 +293,3 @@ export { ConsoleTransport } from './transport/console';
 export { HttpTransport } from './transport/http';
 export { LocalStorageTransport } from './transport/localStorage';
 export { IndexedDBTransport } from './transport/indexedDB';
-export { 
-  ShadowTraceProvider, 
-  useShadowTrace, 
-  useComponentLifecycle, 
-  useErrorTracking, 
-  withShadowTrace, 
-  TrackClick, 
-  TrackForm 
-} from './react';

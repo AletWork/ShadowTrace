@@ -1,7 +1,5 @@
 'use strict';
 
-var React = require('react');
-
 const generateId = () => {
     return Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
 };
@@ -52,7 +50,7 @@ const getDeviceInfo = () => {
     return {
         type,
         os,
-        browser: getBrowserInfo()
+        browser: getBrowserInfo() || 'unknown'
     };
 };
 const debounce = (func, wait) => {
@@ -77,20 +75,9 @@ const getElementSelector = (element) => {
         return `#${element.id}`;
     }
     if (element.className) {
-        // Handle both string and SVGAnimatedString cases
-        let className = '';
-        if (typeof element.className === 'string') {
-            className = element.className;
-        }
-        else if (element.className && typeof element.className === 'object') {
-            // For SVG elements, className is an SVGAnimatedString
-            className = element.className.baseVal || element.className.animVal || '';
-        }
-        if (className) {
-            const classes = className.split(' ').filter(Boolean);
-            if (classes.length > 0) {
-                return `.${classes.join('.')}`;
-            }
+        const classes = element.className.split(' ').filter(Boolean);
+        if (classes.length > 0) {
+            return `.${classes.join('.')}`;
         }
     }
     const tagName = element.tagName.toLowerCase();
@@ -1005,6 +992,50 @@ class AutoTracker {
     }
 }
 
+const DEFAULT_OPTIONS = {
+    windowMs: 1000, // 1 seconde
+    threshold: 3
+};
+class ApiDuplicateDetector {
+    constructor(logger, options) {
+        this.calls = {};
+        this.logger = logger;
+        this.options = Object.assign(Object.assign({}, DEFAULT_OPTIONS), options);
+    }
+    logApiCall(url, params, component) {
+        const key = this.getKey(url, params);
+        const now = Date.now();
+        if (!this.calls[key]) {
+            this.calls[key] = [];
+        }
+        this.calls[key].push(now);
+        // Nettoyage de l'historique
+        this.calls[key] = this.calls[key].filter(ts => now - ts < this.options.windowMs);
+        if (this.calls[key].length >= this.options.threshold) {
+            this.logger.warn('API call duplicate detected', {
+                url,
+                params,
+                count: this.calls[key].length,
+                windowMs: this.options.windowMs,
+                component,
+                stack: (new Error().stack || '').split('\n').slice(1, 6).join('\n')
+            });
+            // On évite de spammer en réinitialisant
+            this.calls[key] = [];
+        }
+    }
+    getKey(url, params) {
+        let paramsString = '';
+        try {
+            paramsString = params ? JSON.stringify(params) : '';
+        }
+        catch (_a) {
+            paramsString = '[unserializable]';
+        }
+        return `${url}|${paramsString}`;
+    }
+}
+
 class IndexedDBTransport {
     constructor(config = {}) {
         this.name = 'indexedDB';
@@ -1129,547 +1160,9 @@ class IndexedDBTransport {
     }
 }
 
-var jsxRuntime = {exports: {}};
-
-var reactJsxRuntime_production = {};
-
-/**
- * @license React
- * react-jsx-runtime.production.js
- *
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-
-var hasRequiredReactJsxRuntime_production;
-
-function requireReactJsxRuntime_production () {
-	if (hasRequiredReactJsxRuntime_production) return reactJsxRuntime_production;
-	hasRequiredReactJsxRuntime_production = 1;
-	var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"),
-	  REACT_FRAGMENT_TYPE = Symbol.for("react.fragment");
-	function jsxProd(type, config, maybeKey) {
-	  var key = null;
-	  void 0 !== maybeKey && (key = "" + maybeKey);
-	  void 0 !== config.key && (key = "" + config.key);
-	  if ("key" in config) {
-	    maybeKey = {};
-	    for (var propName in config)
-	      "key" !== propName && (maybeKey[propName] = config[propName]);
-	  } else maybeKey = config;
-	  config = maybeKey.ref;
-	  return {
-	    $$typeof: REACT_ELEMENT_TYPE,
-	    type: type,
-	    key: key,
-	    ref: void 0 !== config ? config : null,
-	    props: maybeKey
-	  };
-	}
-	reactJsxRuntime_production.Fragment = REACT_FRAGMENT_TYPE;
-	reactJsxRuntime_production.jsx = jsxProd;
-	reactJsxRuntime_production.jsxs = jsxProd;
-	return reactJsxRuntime_production;
-}
-
-var reactJsxRuntime_development = {};
-
-/**
- * @license React
- * react-jsx-runtime.development.js
- *
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-
-var hasRequiredReactJsxRuntime_development;
-
-function requireReactJsxRuntime_development () {
-	if (hasRequiredReactJsxRuntime_development) return reactJsxRuntime_development;
-	hasRequiredReactJsxRuntime_development = 1;
-	"production" !== process.env.NODE_ENV &&
-	  (function () {
-	    function getComponentNameFromType(type) {
-	      if (null == type) return null;
-	      if ("function" === typeof type)
-	        return type.$$typeof === REACT_CLIENT_REFERENCE
-	          ? null
-	          : type.displayName || type.name || null;
-	      if ("string" === typeof type) return type;
-	      switch (type) {
-	        case REACT_FRAGMENT_TYPE:
-	          return "Fragment";
-	        case REACT_PROFILER_TYPE:
-	          return "Profiler";
-	        case REACT_STRICT_MODE_TYPE:
-	          return "StrictMode";
-	        case REACT_SUSPENSE_TYPE:
-	          return "Suspense";
-	        case REACT_SUSPENSE_LIST_TYPE:
-	          return "SuspenseList";
-	        case REACT_ACTIVITY_TYPE:
-	          return "Activity";
-	      }
-	      if ("object" === typeof type)
-	        switch (
-	          ("number" === typeof type.tag &&
-	            console.error(
-	              "Received an unexpected object in getComponentNameFromType(). This is likely a bug in React. Please file an issue."
-	            ),
-	          type.$$typeof)
-	        ) {
-	          case REACT_PORTAL_TYPE:
-	            return "Portal";
-	          case REACT_CONTEXT_TYPE:
-	            return (type.displayName || "Context") + ".Provider";
-	          case REACT_CONSUMER_TYPE:
-	            return (type._context.displayName || "Context") + ".Consumer";
-	          case REACT_FORWARD_REF_TYPE:
-	            var innerType = type.render;
-	            type = type.displayName;
-	            type ||
-	              ((type = innerType.displayName || innerType.name || ""),
-	              (type = "" !== type ? "ForwardRef(" + type + ")" : "ForwardRef"));
-	            return type;
-	          case REACT_MEMO_TYPE:
-	            return (
-	              (innerType = type.displayName || null),
-	              null !== innerType
-	                ? innerType
-	                : getComponentNameFromType(type.type) || "Memo"
-	            );
-	          case REACT_LAZY_TYPE:
-	            innerType = type._payload;
-	            type = type._init;
-	            try {
-	              return getComponentNameFromType(type(innerType));
-	            } catch (x) {}
-	        }
-	      return null;
-	    }
-	    function testStringCoercion(value) {
-	      return "" + value;
-	    }
-	    function checkKeyStringCoercion(value) {
-	      try {
-	        testStringCoercion(value);
-	        var JSCompiler_inline_result = !1;
-	      } catch (e) {
-	        JSCompiler_inline_result = true;
-	      }
-	      if (JSCompiler_inline_result) {
-	        JSCompiler_inline_result = console;
-	        var JSCompiler_temp_const = JSCompiler_inline_result.error;
-	        var JSCompiler_inline_result$jscomp$0 =
-	          ("function" === typeof Symbol &&
-	            Symbol.toStringTag &&
-	            value[Symbol.toStringTag]) ||
-	          value.constructor.name ||
-	          "Object";
-	        JSCompiler_temp_const.call(
-	          JSCompiler_inline_result,
-	          "The provided key is an unsupported type %s. This value must be coerced to a string before using it here.",
-	          JSCompiler_inline_result$jscomp$0
-	        );
-	        return testStringCoercion(value);
-	      }
-	    }
-	    function getTaskName(type) {
-	      if (type === REACT_FRAGMENT_TYPE) return "<>";
-	      if (
-	        "object" === typeof type &&
-	        null !== type &&
-	        type.$$typeof === REACT_LAZY_TYPE
-	      )
-	        return "<...>";
-	      try {
-	        var name = getComponentNameFromType(type);
-	        return name ? "<" + name + ">" : "<...>";
-	      } catch (x) {
-	        return "<...>";
-	      }
-	    }
-	    function getOwner() {
-	      var dispatcher = ReactSharedInternals.A;
-	      return null === dispatcher ? null : dispatcher.getOwner();
-	    }
-	    function UnknownOwner() {
-	      return Error("react-stack-top-frame");
-	    }
-	    function hasValidKey(config) {
-	      if (hasOwnProperty.call(config, "key")) {
-	        var getter = Object.getOwnPropertyDescriptor(config, "key").get;
-	        if (getter && getter.isReactWarning) return false;
-	      }
-	      return void 0 !== config.key;
-	    }
-	    function defineKeyPropWarningGetter(props, displayName) {
-	      function warnAboutAccessingKey() {
-	        specialPropKeyWarningShown ||
-	          ((specialPropKeyWarningShown = true),
-	          console.error(
-	            "%s: `key` is not a prop. Trying to access it will result in `undefined` being returned. If you need to access the same value within the child component, you should pass it as a different prop. (https://react.dev/link/special-props)",
-	            displayName
-	          ));
-	      }
-	      warnAboutAccessingKey.isReactWarning = true;
-	      Object.defineProperty(props, "key", {
-	        get: warnAboutAccessingKey,
-	        configurable: true
-	      });
-	    }
-	    function elementRefGetterWithDeprecationWarning() {
-	      var componentName = getComponentNameFromType(this.type);
-	      didWarnAboutElementRef[componentName] ||
-	        ((didWarnAboutElementRef[componentName] = true),
-	        console.error(
-	          "Accessing element.ref was removed in React 19. ref is now a regular prop. It will be removed from the JSX Element type in a future release."
-	        ));
-	      componentName = this.props.ref;
-	      return void 0 !== componentName ? componentName : null;
-	    }
-	    function ReactElement(
-	      type,
-	      key,
-	      self,
-	      source,
-	      owner,
-	      props,
-	      debugStack,
-	      debugTask
-	    ) {
-	      self = props.ref;
-	      type = {
-	        $$typeof: REACT_ELEMENT_TYPE,
-	        type: type,
-	        key: key,
-	        props: props,
-	        _owner: owner
-	      };
-	      null !== (void 0 !== self ? self : null)
-	        ? Object.defineProperty(type, "ref", {
-	            enumerable: false,
-	            get: elementRefGetterWithDeprecationWarning
-	          })
-	        : Object.defineProperty(type, "ref", { enumerable: false, value: null });
-	      type._store = {};
-	      Object.defineProperty(type._store, "validated", {
-	        configurable: false,
-	        enumerable: false,
-	        writable: true,
-	        value: 0
-	      });
-	      Object.defineProperty(type, "_debugInfo", {
-	        configurable: false,
-	        enumerable: false,
-	        writable: true,
-	        value: null
-	      });
-	      Object.defineProperty(type, "_debugStack", {
-	        configurable: false,
-	        enumerable: false,
-	        writable: true,
-	        value: debugStack
-	      });
-	      Object.defineProperty(type, "_debugTask", {
-	        configurable: false,
-	        enumerable: false,
-	        writable: true,
-	        value: debugTask
-	      });
-	      Object.freeze && (Object.freeze(type.props), Object.freeze(type));
-	      return type;
-	    }
-	    function jsxDEVImpl(
-	      type,
-	      config,
-	      maybeKey,
-	      isStaticChildren,
-	      source,
-	      self,
-	      debugStack,
-	      debugTask
-	    ) {
-	      var children = config.children;
-	      if (void 0 !== children)
-	        if (isStaticChildren)
-	          if (isArrayImpl(children)) {
-	            for (
-	              isStaticChildren = 0;
-	              isStaticChildren < children.length;
-	              isStaticChildren++
-	            )
-	              validateChildKeys(children[isStaticChildren]);
-	            Object.freeze && Object.freeze(children);
-	          } else
-	            console.error(
-	              "React.jsx: Static children should always be an array. You are likely explicitly calling React.jsxs or React.jsxDEV. Use the Babel transform instead."
-	            );
-	        else validateChildKeys(children);
-	      if (hasOwnProperty.call(config, "key")) {
-	        children = getComponentNameFromType(type);
-	        var keys = Object.keys(config).filter(function (k) {
-	          return "key" !== k;
-	        });
-	        isStaticChildren =
-	          0 < keys.length
-	            ? "{key: someKey, " + keys.join(": ..., ") + ": ...}"
-	            : "{key: someKey}";
-	        didWarnAboutKeySpread[children + isStaticChildren] ||
-	          ((keys =
-	            0 < keys.length ? "{" + keys.join(": ..., ") + ": ...}" : "{}"),
-	          console.error(
-	            'A props object containing a "key" prop is being spread into JSX:\n  let props = %s;\n  <%s {...props} />\nReact keys must be passed directly to JSX without using spread:\n  let props = %s;\n  <%s key={someKey} {...props} />',
-	            isStaticChildren,
-	            children,
-	            keys,
-	            children
-	          ),
-	          (didWarnAboutKeySpread[children + isStaticChildren] = true));
-	      }
-	      children = null;
-	      void 0 !== maybeKey &&
-	        (checkKeyStringCoercion(maybeKey), (children = "" + maybeKey));
-	      hasValidKey(config) &&
-	        (checkKeyStringCoercion(config.key), (children = "" + config.key));
-	      if ("key" in config) {
-	        maybeKey = {};
-	        for (var propName in config)
-	          "key" !== propName && (maybeKey[propName] = config[propName]);
-	      } else maybeKey = config;
-	      children &&
-	        defineKeyPropWarningGetter(
-	          maybeKey,
-	          "function" === typeof type
-	            ? type.displayName || type.name || "Unknown"
-	            : type
-	        );
-	      return ReactElement(
-	        type,
-	        children,
-	        self,
-	        source,
-	        getOwner(),
-	        maybeKey,
-	        debugStack,
-	        debugTask
-	      );
-	    }
-	    function validateChildKeys(node) {
-	      "object" === typeof node &&
-	        null !== node &&
-	        node.$$typeof === REACT_ELEMENT_TYPE &&
-	        node._store &&
-	        (node._store.validated = 1);
-	    }
-	    var React$1 = React,
-	      REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"),
-	      REACT_PORTAL_TYPE = Symbol.for("react.portal"),
-	      REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"),
-	      REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"),
-	      REACT_PROFILER_TYPE = Symbol.for("react.profiler");
-	    var REACT_CONSUMER_TYPE = Symbol.for("react.consumer"),
-	      REACT_CONTEXT_TYPE = Symbol.for("react.context"),
-	      REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"),
-	      REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"),
-	      REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"),
-	      REACT_MEMO_TYPE = Symbol.for("react.memo"),
-	      REACT_LAZY_TYPE = Symbol.for("react.lazy"),
-	      REACT_ACTIVITY_TYPE = Symbol.for("react.activity"),
-	      REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"),
-	      ReactSharedInternals =
-	        React$1.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
-	      hasOwnProperty = Object.prototype.hasOwnProperty,
-	      isArrayImpl = Array.isArray,
-	      createTask = console.createTask
-	        ? console.createTask
-	        : function () {
-	            return null;
-	          };
-	    React$1 = {
-	      "react-stack-bottom-frame": function (callStackForError) {
-	        return callStackForError();
-	      }
-	    };
-	    var specialPropKeyWarningShown;
-	    var didWarnAboutElementRef = {};
-	    var unknownOwnerDebugStack = React$1["react-stack-bottom-frame"].bind(
-	      React$1,
-	      UnknownOwner
-	    )();
-	    var unknownOwnerDebugTask = createTask(getTaskName(UnknownOwner));
-	    var didWarnAboutKeySpread = {};
-	    reactJsxRuntime_development.Fragment = REACT_FRAGMENT_TYPE;
-	    reactJsxRuntime_development.jsx = function (type, config, maybeKey, source, self) {
-	      var trackActualOwner =
-	        1e4 > ReactSharedInternals.recentlyCreatedOwnerStacks++;
-	      return jsxDEVImpl(
-	        type,
-	        config,
-	        maybeKey,
-	        false,
-	        source,
-	        self,
-	        trackActualOwner
-	          ? Error("react-stack-top-frame")
-	          : unknownOwnerDebugStack,
-	        trackActualOwner ? createTask(getTaskName(type)) : unknownOwnerDebugTask
-	      );
-	    };
-	    reactJsxRuntime_development.jsxs = function (type, config, maybeKey, source, self) {
-	      var trackActualOwner =
-	        1e4 > ReactSharedInternals.recentlyCreatedOwnerStacks++;
-	      return jsxDEVImpl(
-	        type,
-	        config,
-	        maybeKey,
-	        true,
-	        source,
-	        self,
-	        trackActualOwner
-	          ? Error("react-stack-top-frame")
-	          : unknownOwnerDebugStack,
-	        trackActualOwner ? createTask(getTaskName(type)) : unknownOwnerDebugTask
-	      );
-	    };
-	  })();
-	return reactJsxRuntime_development;
-}
-
-if (process.env.NODE_ENV === 'production') {
-  jsxRuntime.exports = requireReactJsxRuntime_production();
-} else {
-  jsxRuntime.exports = requireReactJsxRuntime_development();
-}
-
-var jsxRuntimeExports = jsxRuntime.exports;
-
-const ShadowTraceContext = React.createContext(null);
-function ShadowTraceProvider({ config, children, }) {
-    const loggerRef = React.useRef(null);
-    React.useEffect(() => {
-        // Créer et initialiser le logger
-        loggerRef.current = new ShadowTrace(config);
-        loggerRef.current.init();
-        // Cleanup à la destruction
-        return () => {
-            if (loggerRef.current) {
-                loggerRef.current.destroy();
-            }
-        };
-    }, []);
-    return (jsxRuntimeExports.jsx(ShadowTraceContext.Provider, { value: loggerRef.current, children: children }));
-}
-function useShadowTrace() {
-    const logger = React.useContext(ShadowTraceContext);
-    if (!logger) {
-        throw new Error("useShadowTrace must be used within a ShadowTraceProvider");
-    }
-    return {
-        debug: (message, data) => logger.debug(message, data),
-        info: (message, data) => logger.info(message, data),
-        warn: (message, data) => logger.warn(message, data),
-        error: (message, data) => logger.error(message, data),
-        track: (event, data) => logger.track(event, data),
-        setContext: (context) => logger.setContext(context),
-        setUserId: (userId) => logger.setUserId(userId),
-    };
-}
-// Hook pour tracker automatiquement le cycle de vie d'un composant
-function useComponentLifecycle(componentName) {
-    const logger = useShadowTrace();
-    React.useEffect(() => {
-        logger.debug(`Component mounted: ${componentName}`);
-        return () => {
-            logger.debug(`Component unmounted: ${componentName}`);
-        };
-    }, [componentName, logger]);
-}
-// Hook pour tracker les erreurs dans un composant
-function useErrorTracking(componentName) {
-    const logger = useShadowTrace();
-    React.useEffect(() => {
-        const handleError = (event) => {
-            logger.error(`Error in ${componentName}`, {
-                message: event.message,
-                filename: event.filename,
-                lineno: event.lineno,
-                colno: event.colno,
-                error: event.error,
-            });
-        };
-        window.addEventListener("error", handleError);
-        return () => window.removeEventListener("error", handleError);
-    }, [componentName, logger]);
-}
-// HOC pour wrapper un composant avec le logging automatique
-function withShadowTrace(WrappedComponent, componentName) {
-    const displayName = componentName ||
-        WrappedComponent.displayName ||
-        WrappedComponent.name ||
-        "Component";
-    const ShadowTraceWrapper = (props) => {
-        useComponentLifecycle(displayName);
-        useErrorTracking(displayName);
-        return jsxRuntimeExports.jsx(WrappedComponent, Object.assign({}, props));
-    };
-    ShadowTraceWrapper.displayName = `withShadowTrace(${displayName})`;
-    return ShadowTraceWrapper;
-}
-function TrackClick({ eventName, eventData, children, }) {
-    const logger = useShadowTrace();
-    const handleClick = (originalOnClick) => {
-        return (event) => {
-            // Logger l'événement
-            logger.track(eventName, Object.assign(Object.assign({}, eventData), { timestamp: Date.now(), target: {
-                    tagName: event.target.tagName,
-                    id: event.target.id,
-                    className: event.target.className,
-                } }));
-            // Exécuter le onClick original s'il existe
-            if (originalOnClick) {
-                originalOnClick();
-            }
-        };
-    };
-    return React.cloneElement(children, {
-        onClick: handleClick(children.props.onClick),
-    });
-}
-function TrackForm({ formName, children }) {
-    const logger = useShadowTrace();
-    const handleSubmit = (originalOnSubmit) => {
-        return (event) => {
-            const formData = new FormData(event.currentTarget);
-            const data = {};
-            // Collecter les données du formulaire (sans les valeurs sensibles)
-            formData.forEach((value, key) => {
-                if (!key.toLowerCase().includes("password")) {
-                    data[key] = value.toString().substring(0, 100);
-                }
-            });
-            logger.track("form_submit", {
-                formName,
-                fields: Object.keys(data),
-                timestamp: Date.now(),
-            });
-            if (originalOnSubmit) {
-                originalOnSubmit(event);
-            }
-        };
-    };
-    return React.cloneElement(children, {
-        onSubmit: handleSubmit(children.props.onSubmit),
-    });
-}
-
 class ShadowTrace {
     constructor(config = {}) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d;
         this.isInitialized = false;
         // Configuration par défaut
         this.config = {
@@ -1703,16 +1196,14 @@ class ShadowTrace {
             flushInterval: config.flushInterval || 10000,
             context: config.context || {},
             filters: config.filters || [],
-            onError: config.onError || (() => { })
+            onError: config.onError || (() => { }),
+            apiDuplicateDetection: config.apiDuplicateDetection || { enabled: false }
         };
         // Contexte par défaut
         this.context = Object.assign({ sessionId: generateId(), url: typeof window !== 'undefined' ? window.location.href : '', referrer: typeof document !== 'undefined' ? document.referrer : '', userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '', viewport: typeof window !== 'undefined' ? {
                 width: window.innerWidth,
                 height: window.innerHeight
-            } : { width: 0, height: 0 }, device: (() => {
-                const deviceInfo = getDeviceInfo();
-                return Object.assign(Object.assign({}, deviceInfo), { browser: deviceInfo.browser === null ? undefined : deviceInfo.browser });
-            })() }, this.config.context);
+            } : { width: 0, height: 0 }, device: getDeviceInfo() }, this.config.context);
         // Initialisation du logger
         this.logger = new Logger({
             level: this.config.level,
@@ -1725,6 +1216,10 @@ class ShadowTrace {
         });
         // Ajout des transports
         this.setupTransports();
+        // Initialisation du détecteur de doublons API si activé
+        if ((_d = this.config.apiDuplicateDetection) === null || _d === void 0 ? void 0 : _d.enabled) {
+            this.apiDuplicateDetector = new ApiDuplicateDetector(this, this.config.apiDuplicateDetection);
+        }
     }
     init() {
         if (this.isInitialized) {
@@ -1765,6 +1260,19 @@ class ShadowTrace {
     track(event, data) {
         this.logger.log('info', `Event: ${event}`, Object.assign(Object.assign({ event }, data), { _type: 'track' }));
     }
+    /**
+     * Log un appel API et détecte les doublons (si activé)
+     * @param url URL de l'appel
+     * @param params Paramètres de l'appel
+     * @param component Nom du composant (optionnel)
+     */
+    logApiCall(url, params, component) {
+        if (this.apiDuplicateDetector) {
+            this.apiDuplicateDetector.logApiCall(url, params, component);
+        }
+        // Log normal de l'appel API (optionnel)
+        this.logger.log('info', 'API call', { url, params, component, _type: 'api_call' });
+    }
     setContext(context) {
         this.context = Object.assign(Object.assign({}, this.context), context);
         this.logger.updateContext(this.context);
@@ -1786,7 +1294,7 @@ class ShadowTrace {
         this.isInitialized = false;
     }
     setupTransports() {
-        this.config.transports.forEach((transportType) => {
+        this.config.transports.forEach(transportType => {
             try {
                 switch (transportType) {
                     case 'console':
@@ -1884,9 +1392,6 @@ exports.IndexedDBTransport = IndexedDBTransport;
 exports.LocalStorageTransport = LocalStorageTransport;
 exports.Logger = Logger;
 exports.ShadowTrace = ShadowTrace;
-exports.ShadowTraceProvider = ShadowTraceProvider;
-exports.TrackClick = TrackClick;
-exports.TrackForm = TrackForm;
 exports.createLogger = createLogger;
 exports.debug = debug;
 exports.error = error;
@@ -1894,9 +1399,5 @@ exports.getDefaultLogger = getDefaultLogger;
 exports.info = info;
 exports.init = init;
 exports.track = track;
-exports.useComponentLifecycle = useComponentLifecycle;
-exports.useErrorTracking = useErrorTracking;
-exports.useShadowTrace = useShadowTrace;
 exports.warn = warn;
-exports.withShadowTrace = withShadowTrace;
 //# sourceMappingURL=index.js.map

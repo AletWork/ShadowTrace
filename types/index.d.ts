@@ -31,7 +31,7 @@ export interface LogContext {
 }
 
 export interface AutoTrackEvent {
-  type: 'click' | 'input' | 'scroll' | 'navigation' | 'error' | 'custom';
+  type: 'click' | 'input' | 'scroll' | 'navigation' | 'error' | 'custom' | 'performance' | 'warning';
   element?: {
     tagName: string;
     id?: string;
@@ -40,6 +40,12 @@ export interface AutoTrackEvent {
     attributes?: Record<string, string>;
   };
   data?: any;
+}
+
+export interface ApiDuplicateDetectionConfig {
+  enabled?: boolean;
+  windowMs?: number;
+  threshold?: number;
 }
 
 export interface ShadowTraceConfig {
@@ -57,6 +63,7 @@ export interface ShadowTraceConfig {
   context?: Partial<LogContext>;
   filters?: LogFilter[];
   onError?: (error: Error) => void;
+  apiDuplicateDetection?: ApiDuplicateDetectionConfig;
 }
 
 export interface AutoTrackConfig {
@@ -66,6 +73,12 @@ export interface AutoTrackConfig {
   navigation?: boolean;
   errors?: boolean;
   performance?: boolean;
+  webVitals?: boolean;
+  slowPages?: boolean;
+  memoryUsage?: boolean;
+  consoleErrors?: boolean;
+  unhandledPromises?: boolean;
+  resourceErrors?: boolean;
   selectors?: {
     ignore?: string[];
     track?: string[];

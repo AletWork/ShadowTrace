@@ -7,7 +7,7 @@ export declare const getDeviceInfo: () => {
 } | {
     type: "mobile" | "tablet" | "desktop";
     os: string;
-    browser: string | null;
+    browser: string;
 };
 export declare const debounce: <T extends (...args: any[]) => any>(func: T, wait: number) => ((...args: Parameters<T>) => void);
 export declare const throttle: <T extends (...args: any[]) => any>(func: T, limit: number) => ((...args: Parameters<T>) => void);
